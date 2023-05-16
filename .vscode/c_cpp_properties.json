@@ -1,0 +1,38 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
+{
+    "configurations": [
+        {
+            "name": "PlatformIO",
+            "includePath": [
+                "/home/swagner/source/platformio/fluenthttp/include",
+                "/home/swagner/source/platformio/fluenthttp/src",
+                "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/ArduinoFake/src",
+                "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/Unity/src",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/home/swagner/source/platformio/fluenthttp/include",
+                    "/home/swagner/source/platformio/fluenthttp/src",
+                    "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/ArduinoFake/src",
+                    "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/Unity/src",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=60107",
+                ""
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "compilerArgs": [
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}

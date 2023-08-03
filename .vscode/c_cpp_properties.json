@@ -8,24 +8,24 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/swagner/source/platformio/fluenthttp/include",
-                "/home/swagner/source/platformio/fluenthttp/src",
-                "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/ArduinoFake/src",
-                "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/Unity/src",
+                "/mnt/data/source/platformio/fluenthttp/include",
+                "/mnt/data/source/platformio/fluenthttp/src",
+                "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/native/ArduinoFake/src",
+                "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/native/Unity/src",
                 ""
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/swagner/source/platformio/fluenthttp/include",
-                    "/home/swagner/source/platformio/fluenthttp/src",
-                    "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/ArduinoFake/src",
-                    "/home/swagner/source/platformio/fluenthttp/.pio/libdeps/native/Unity/src",
+                    "/mnt/data/source/platformio/fluenthttp/include",
+                    "/mnt/data/source/platformio/fluenthttp/src",
+                    "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/native/ArduinoFake/src",
+                    "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/native/Unity/src",
                     ""
                 ]
             },
             "defines": [
-                "PLATFORMIO=60107",
+                "PLATFORMIO=60109",
                 ""
             ],
             "compilerPath": "/usr/bin/gcc",

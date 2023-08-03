@@ -28,7 +28,7 @@
                 "PLATFORMIO=60109",
                 ""
             ],
-            "compilerPath": "/usr/bin/gcc",
+            "compilerPath": "gcc",
             "compilerArgs": [
                 ""
             ]

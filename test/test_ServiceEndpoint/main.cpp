@@ -2,9 +2,10 @@
 #include <unity.h>
 #include <WiFi.h>
 #include <fluenthttp.h>
+#include <env.h>
 
 WiFiClient client;
-ServiceEndpoint endpoint(client, "test.wagner-mendoza.de");
+ServiceEndpoint endpoint(client, TEST_ENDPOINT);
 
 const int TIMEOUT = 500;
 
@@ -152,7 +153,7 @@ void setup()
   UNITY_BEGIN(); // IMPORTANT LINE!
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin("H28-EG", "VaSia14$wusT");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWD);
   while (!WiFi.isConnected()) {
     digitalWrite(LED_BUILTIN, (digitalRead(LED_BUILTIN) + 1) % 2);
     delay(300);

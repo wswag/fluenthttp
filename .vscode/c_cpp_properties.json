@@ -10,6 +10,7 @@
             "includePath": [
                 "/mnt/data/source/platformio/fluenthttp/include",
                 "/mnt/data/source/platformio/fluenthttp/src",
+                "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                 "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/nodemcu/embedded-util/include",
                 "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/nodemcu/embedded-util/src",
                 "/home/swagner/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
@@ -207,7 +208,6 @@
                 "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/nodemcu/Unity/src",
                 "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                 "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
-                "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                 "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src",
                 "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src",
                 "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src",
@@ -245,6 +245,7 @@
                 "path": [
                     "/mnt/data/source/platformio/fluenthttp/include",
                     "/mnt/data/source/platformio/fluenthttp/src",
+                    "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                     "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/nodemcu/embedded-util/include",
                     "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/nodemcu/embedded-util/src",
                     "/home/swagner/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
@@ -442,7 +443,6 @@
                     "/mnt/data/source/platformio/fluenthttp/.pio/libdeps/nodemcu/Unity/src",
                     "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                     "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
-                    "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                     "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src",
                     "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src",
                     "/home/swagner/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src",

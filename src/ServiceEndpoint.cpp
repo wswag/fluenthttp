@@ -65,6 +65,7 @@ bool ServiceEndpoint::lockNext(int msToWait) {
             result = true;
             _lastRequest = ServiceRequest(_client, _keepAlive, _yieldHandle);
             _lastRequest.beginRequest(_nonce);
+            _nonce++;
         }
         xSemaphoreGive(_waitHandle);
     }
@@ -76,7 +77,6 @@ void ServiceEndpoint::assertNonce() {
         while (!lockNext(100))
             vTaskDelay(20 / portTICK_PERIOD_MS);
     }
-    _nonce++;
 }
 
 ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {

@@ -10,35 +10,35 @@ int ServiceEndpoint::connectClient() {
     return result;
 }
 
-void ServiceEndpoint::finalizeLastRequest() {
-    auto s = _lastRequest.getStatus();
-    if (s != srsNotStarted && s != srsFinished) {
-        _lastRequest.await();
-    }
+ServiceRequest& ServiceEndpoint::getActiveRequest() {
+    return _lastRequest;
+}
+
+void ServiceEndpoint::createSemaphores() {
+    _waitHandle = xSemaphoreCreateBinary();
+    _yieldHandle = xSemaphoreCreateBinary();
+    xSemaphoreGive(_waitHandle);
+    xSemaphoreGive(_yieldHandle);
 }
 
 ServiceEndpoint::ServiceEndpoint(Client& client, const char* hostname) 
     : _client(client), _hostname(hostname), _port(80), _hasHostname(true) {
-    _waitHandle = xSemaphoreCreateBinary();
-    xSemaphoreGive(_waitHandle);
+    createSemaphores();
 }
 
 ServiceEndpoint::ServiceEndpoint(Client& client, const char* hostname, uint16_t port) 
     : _client(client), _hostname(hostname), _port(port), _hasHostname(true) {    
-    _waitHandle = xSemaphoreCreateBinary();
-    xSemaphoreGive(_waitHandle);
+    createSemaphores();
 }
 
 ServiceEndpoint::ServiceEndpoint(Client& client, IPAddress ip) 
     : _client(client), _ipaddr(ip), _port(80) {    
-    _waitHandle = xSemaphoreCreateBinary();
-    xSemaphoreGive(_waitHandle);
+    createSemaphores();
 }
 
 ServiceEndpoint::ServiceEndpoint(Client& client, IPAddress ip, uint16_t port) 
     : _client(client), _ipaddr(ip), _port(port) {
-    _waitHandle = xSemaphoreCreateBinary();
-    xSemaphoreGive(_waitHandle);
+    createSemaphores();
 }
 
 ServiceEndpoint& ServiceEndpoint::withKeepAlive() {
@@ -53,43 +53,42 @@ ServiceEndpoint& ServiceEndpoint::withCloseAfterRequest() {
 
 bool ServiceEndpoint::isReady() {
     auto s = _lastRequest.getStatus();
-    return (s == srsFinished || s == srsNotStarted) && !_armed;
+    return (s == srsIdle);
 }
 
-bool ServiceEndpoint::lockNext() {
-    const TickType_t xTicksToWait = (100) / portTICK_PERIOD_MS;
+bool ServiceEndpoint::lockNext(int msToWait) {
+    bool result = false;
+    const TickType_t xTicksToWait = (msToWait) / portTICK_PERIOD_MS;
     if (xSemaphoreTake(_waitHandle, xTicksToWait) == pdTRUE)
     {
-        if (isReady()) {
-            _armed = true;
-            return true;
+        if (isReady() && connectClient()) {
+            result = true;
+            _lastRequest = ServiceRequest(_client, _keepAlive, _yieldHandle);
+            _lastRequest.beginRequest(_nonce);
         }
         xSemaphoreGive(_waitHandle);
     }
-    return false;
+    return result;
+}
+
+void ServiceEndpoint::assertNonce() {
+    if (_nonce != _lastRequest._nonce) {
+        while (!lockNext(100))
+            vTaskDelay(20 / portTICK_PERIOD_MS);
+    }
+    _nonce++;
 }
 
 ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
-    finalizeLastRequest();
-    _lastRequest = ServiceRequest(_client, _keepAlive);
-    if (connectClient()) {
-        _lastRequest.beginRequest("GET", relativeUri);
-        _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
-    }
-    _armed = false;
-    xSemaphoreGive(_waitHandle);
+    assertNonce();
+    _lastRequest.call("GET", relativeUri);
+    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
     return _lastRequest;
 }
 
 ServiceRequest& ServiceEndpoint::post(const char* relativeUri) {
-    finalizeLastRequest();
-    _armed = true;
-    _lastRequest = ServiceRequest(_client, _keepAlive);
-    if (connectClient()) {
-        _lastRequest.beginRequest("POST", relativeUri);
-        _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
-    }
-    _armed = false;
-    xSemaphoreGive(_waitHandle);
+    assertNonce();
+    _lastRequest.call("POST", relativeUri);
+    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
     return _lastRequest;
 }

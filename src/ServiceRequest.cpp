@@ -1,9 +1,16 @@
 #include "fluenthttp.h"
 
-void ServiceRequest::beginRequest(const char* method, const char* relativeUri) 
+void ServiceRequest::beginRequest(long nonce) {
+    _status = srsArmed;
+    _nonce = nonce;
+}
+
+void ServiceRequest::call(const char* method, const char* relativeUri) 
 {
-    // check if client is connected, connect otherwise
+    if (_status != srsArmed)
+        return;
     _status = srsIncomplete;
+    // check if client is connected, connect otherwise
     _client->print(method);
     _client->print(' ');
     _client->print(relativeUri); // TODO: URL Encode
@@ -28,10 +35,7 @@ void ServiceRequest::handleResponseHeader() {
     int peek = _client->peek();
     if (peek == '\r' || peek == '\n') {
         // header ends, content starts
-        _client->read();
-        int peek = _client->peek();
-        if (peek == '\r' || peek == '\n')
-            _client->read(); // this should be normal
+        _client->readStringUntil('\n');
         _status = srsReadingContent;
         return;
     }
@@ -65,7 +69,7 @@ void ServiceRequest::handleResponseContent() {
     }
     else
         while (_client->available()) _client->read(); // TODO: how to make this more efficient?
-    _status = srsFinished;
+    _status = srsIdle;
 }
 
 // reads back the content by evaluating the content-length attribute
@@ -102,8 +106,9 @@ ServiceRequest::ServiceRequest()
         : _client(nullptr) {
 }
 
-ServiceRequest::ServiceRequest(Client& s, bool keepAlive) 
-        : _client(&s), _keepAlive(_keepAlive) {
+ServiceRequest::ServiceRequest(Client& s, bool keepAlive, SemaphoreHandle_t yieldHandle) 
+        : _client(&s), _keepAlive(_keepAlive), _yieldHandle(yieldHandle) {
+
 }
 
 ServiceRequest& ServiceRequest::onSuccess(service_endpoint_callback_t callback) {
@@ -122,18 +127,33 @@ ServiceRequest& ServiceRequest::onTimeout(timeout_callback_t callback) {
 }
 
 ServiceRequest& ServiceRequest::withTimeout(uint32_t timeout) {
-    _timeout = PulseGen(timeout, false);
+    _timeout = timeout;
     return *this;
 }
 
 void ServiceRequest::yield() {
-    if (_status == srsIncomplete || _status == srsFinished) return;
+    if (xSemaphoreTake(_yieldHandle, 0)) {
+        try {
+            innerYield();
+        }
+        catch (std::exception e)
+        {
+        }
+        xSemaphoreGive(_yieldHandle);
+    }
+}
+
+void ServiceRequest::innerYield() {
+    // block parallel yield calls
+    if (_status == srsIdle || _status == srsArmed || _status == srsIncomplete) return;
 
     // check timeout
-    if  (_timeout.getInterval() != 0 && _timeout.Pulse()) {
-        _status = srsFinished;
+    if  (_timeout != 0 && (millis() - _t0) >= _timeout) {
         if (_timeoutCallback != 0)
             _timeoutCallback();
+        _client->stop();
+        _status = srsIdle;
+        return;
     }
     
     size_t btr = 0;
@@ -144,8 +164,11 @@ void ServiceRequest::yield() {
             case srsAwaitResponse: handleResponseBegin(); break;
             case srsReadingHeader: handleResponseHeader(); break;
             // content with length >0
-            case srsReadingContent: handleResponseContent(); break;
-            default: return;
+            case srsReadingContent:
+                handleResponseContent();
+                return;
+            default:
+                return;
         }
     }
 }
@@ -161,7 +184,7 @@ ServiceRequest& ServiceRequest::addHeader(const char* key, const char* value) {
 ServiceRequest& ServiceRequest::fire() {
     if (_status == srsIncomplete) {
         _client->println();
-        _timeout.Reset();
+        _t0 = millis();
         _status = srsAwaitResponse;
     }
     return *this;
@@ -171,7 +194,7 @@ ServiceRequest& ServiceRequest::fireContent(size_t count, uint8_t* data) {
     addHeader("Content-Length", String(count).c_str());
     _client->println();
     _client->write(data, count);
-    _timeout.Reset();
+    _t0 = millis();
     _status = srsAwaitResponse;
     return *this;
 }
@@ -180,16 +203,23 @@ ServiceRequest& ServiceRequest::fireContent(String data) {
     addHeader("Content-Length", String(data.length()).c_str());
     _client->println();
     _client->print(data);
-    _timeout.Reset();
+    _t0 = millis();
     _status = srsAwaitResponse;
     return *this;
 }
 
+void ServiceRequest::cancel() {
+    if (_client->connected())
+        _client->stop();
+    _status = srsIdle;
+}
+
 void ServiceRequest::await() {
     fire(); // to be sure.. won't have side effects if already fired
-    while (_status != srsFinished) {
-        vTaskDelay(10 / portTICK_RATE_MS);
+    while (_status != srsIdle) {
         yield();
+        if (_status != srsIdle)
+            vTaskDelay(10 / portTICK_RATE_MS);
     }
 }
 

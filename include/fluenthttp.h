@@ -5,8 +5,7 @@
 #include <functional>
 #include <PulseGen.h>
 #include <ChainedList.h>
-#include <FreeRTOS.h>
-//#include <RTOS.h>
+#include <RTOS.h>
 
 #ifndef MAX_CONTENTSTRING_STACK_SIZE
   #define MAX_CONTENTSTRING_STACK_SIZE 256

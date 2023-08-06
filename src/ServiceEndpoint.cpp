@@ -58,12 +58,14 @@ bool ServiceEndpoint::isReady() {
 
 bool ServiceEndpoint::lockNext() {
     const TickType_t xTicksToWait = (100) / portTICK_PERIOD_MS;
-    xSemaphoreTake(_waitHandle, xTicksToWait);
-    if (isReady()) {
-        _armed = true;
-        return true;
+    if (xSemaphoreTake(_waitHandle, xTicksToWait) == pdTRUE)
+    {
+        if (isReady()) {
+            _armed = true;
+            return true;
+        }
+        xSemaphoreGive(_waitHandle);
     }
-    xSemaphoreGive(_waitHandle);
     return false;
 }
 

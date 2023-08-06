@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <unity.h>
 #include <WiFi.h>
+#include <env.h>
 
 void setUp(void)
 {
@@ -22,7 +23,7 @@ void test_client_connect() {
     int result = 0;
 
     // act
-    result = c->connect("mqtt.wagner-mendoza.de", 1883);
+    result = c->connect(TEST_ENDPOINT, 1883);
     clients[i] = c;
     
     // assert
@@ -47,7 +48,7 @@ void setup()
   UNITY_BEGIN(); // IMPORTANT LINE!
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin("H28-EG", "VaSia14$wusT");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWD);
   while (!WiFi.isConnected()) {
     digitalWrite(LED_BUILTIN, (digitalRead(LED_BUILTIN) + 1) % 2);
     delay(100);

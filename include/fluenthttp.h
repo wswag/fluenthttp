@@ -39,7 +39,7 @@ class ServiceRequest {
         service_endpoint_callback_t _failCallback = 0;
         timeout_callback_t _timeoutCallback = 0;
         long _t0 = 0;
-        int _timeout;
+        int _timeout = 1000;
         Client* _client;
         service_request_status_t _status = srsIdle;
         service_response_t _response = service_response_t();

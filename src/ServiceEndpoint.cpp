@@ -73,7 +73,7 @@ bool ServiceEndpoint::lockNext(int msToWait) {
 }
 
 void ServiceEndpoint::assertNonce() {
-    if (_nonce != _lastRequest._nonce) {
+    if (_lastRequest.getStatus() == srsIdle && _nonce != _lastRequest._nonce) {
         while (!lockNext(100))
             vTaskDelay(20 / portTICK_PERIOD_MS);
     }

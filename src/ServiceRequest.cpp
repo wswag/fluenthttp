@@ -65,6 +65,7 @@ void ServiceRequest::handleResponseContent() {
         }
     }
     if (!_keepAlive) {
+        log_v("don't keep alive, so closing client");
         _client->stop();
     }
     else
@@ -107,7 +108,7 @@ ServiceRequest::ServiceRequest()
 }
 
 ServiceRequest::ServiceRequest(Client& s, bool keepAlive, SemaphoreHandle_t yieldHandle) 
-        : _client(&s), _keepAlive(_keepAlive), _yieldHandle(yieldHandle) {
+        : _client(&s), _keepAlive(keepAlive), _yieldHandle(yieldHandle) {
 
 }
 

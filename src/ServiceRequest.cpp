@@ -147,15 +147,6 @@ void ServiceRequest::yield() {
 void ServiceRequest::innerYield() {
     // block parallel yield calls
     if (_status == srsIdle || _status == srsArmed || _status == srsIncomplete) return;
-
-    // check timeout
-    if  (_timeout != 0 && (millis() - _t0) >= _timeout) {
-        if (_timeoutCallback != 0)
-            _timeoutCallback();
-        _client->stop();
-        _status = srsIdle;
-        return;
-    }
     
     size_t btr = 0;
     while ((btr = _client->available()) != 0 || 
@@ -171,6 +162,15 @@ void ServiceRequest::innerYield() {
             default:
                 return;
         }
+    }
+
+    // check timeout
+    if  (_timeout != 0 && (millis() - _t0) >= _timeout) {
+        if (_timeoutCallback != 0)
+            _timeoutCallback();
+        _client->stop();
+        _status = srsIdle;
+        return;
     }
 }
 

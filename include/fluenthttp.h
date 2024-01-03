@@ -43,7 +43,6 @@ class ServiceRequest {
         Client* _client;
         service_request_status_t _status = srsIdle;
         service_response_t _response = service_response_t();
-        bool _keepAlive = false;
         long _nonce = 0;
 
         void handleResponseBegin();
@@ -54,7 +53,7 @@ class ServiceRequest {
         void call(const char* method, const char* relativeUri);
         void innerYield();
 
-        ServiceRequest(Client& s, bool keepAlive, SemaphoreHandle_t yieldHandle);
+        ServiceRequest(Client& s, SemaphoreHandle_t yieldHandle);
     public:
         // reads back the content by evaluating the content-length attribute
         static String stringContent(service_response_t r);
@@ -95,7 +94,7 @@ class ServiceEndpoint {
         SemaphoreHandle_t _waitHandle;
         SemaphoreHandle_t _yieldHandle;
 
-        long _nonce = 0;
+        long _nonce = 1;
 
         int connectClient();
         void assertNonce();
@@ -106,8 +105,10 @@ class ServiceEndpoint {
         ServiceEndpoint(Client& client, IPAddress ip);
         ServiceEndpoint(Client& client, IPAddress ip, uint16_t port);
 
-        ServiceEndpoint& withKeepAlive();
-        ServiceEndpoint& withCloseAfterRequest();
+        ServiceEndpoint& withKeepAlive(bool keepAliveHeader);
+
+        // close the underlying client
+        void close();
 
         bool isReady();
         bool lockNext(int msToWait);

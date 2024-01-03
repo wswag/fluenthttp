@@ -15,7 +15,6 @@ void ServiceRequest::call(const char* method, const char* relativeUri)
     _client->print(' ');
     _client->print(relativeUri); // TODO: URL Encode
     _client->println(" HTTP/1.1");
-    addHeader("Connection", _keepAlive ? "keep-alive" : "close");
 }
 
 void ServiceRequest::handleResponseBegin() 
@@ -64,12 +63,6 @@ void ServiceRequest::handleResponseContent() {
             _successCallback(_response);
         }
     }
-    if (!_keepAlive) {
-        log_v("don't keep alive, so closing client");
-        _client->stop();
-    }
-    else
-        while (_client->available()) _client->read(); // TODO: how to make this more efficient?
     _status = srsIdle;
 }
 
@@ -107,8 +100,8 @@ ServiceRequest::ServiceRequest()
         : _client(nullptr) {
 }
 
-ServiceRequest::ServiceRequest(Client& s, bool keepAlive, SemaphoreHandle_t yieldHandle) 
-        : _client(&s), _keepAlive(keepAlive), _yieldHandle(yieldHandle) {
+ServiceRequest::ServiceRequest(Client& s, SemaphoreHandle_t yieldHandle) 
+        : _client(&s), _yieldHandle(yieldHandle) {
 
 }
 

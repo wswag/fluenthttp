@@ -7,6 +7,11 @@ int ServiceEndpoint::connectClient() {
             ? _client.connect(_ipaddr, _port)
             : _client.connect(_hostname.c_str(), _port); 
     }
+    else
+    {
+        // read all available data to start clean
+        while (_client.available()) _client.read(); // TODO: how to make this more efficient?
+    }
     return result;
 }
 
@@ -41,13 +46,8 @@ ServiceEndpoint::ServiceEndpoint(Client& client, IPAddress ip, uint16_t port)
     createSemaphores();
 }
 
-ServiceEndpoint& ServiceEndpoint::withKeepAlive() {
-    _keepAlive = true;
-    return *this;
-}
-
-ServiceEndpoint& ServiceEndpoint::withCloseAfterRequest() {
-    _keepAlive = false;
+ServiceEndpoint& ServiceEndpoint::withKeepAlive(bool keepAliveHeader) {
+    _keepAlive = keepAliveHeader;
     return *this;
 }
 
@@ -63,13 +63,17 @@ bool ServiceEndpoint::lockNext(int msToWait) {
     {
         if (isReady() && connectClient()) {
             result = true;
-            _lastRequest = ServiceRequest(_client, _keepAlive, _yieldHandle);
+            _lastRequest = ServiceRequest(_client, _yieldHandle);
             _lastRequest.beginRequest(_nonce);
             _nonce++;
         }
         xSemaphoreGive(_waitHandle);
     }
     return result;
+}
+
+void ServiceEndpoint::close() {
+    _client.stop();
 }
 
 void ServiceEndpoint::assertNonce() {
@@ -83,6 +87,7 @@ ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
     assertNonce();
     _lastRequest.call("GET", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
+    _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
     return _lastRequest;
 }
 
@@ -90,5 +95,6 @@ ServiceRequest& ServiceEndpoint::post(const char* relativeUri) {
     assertNonce();
     _lastRequest.call("POST", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
+    _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
     return _lastRequest;
 }

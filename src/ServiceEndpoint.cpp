@@ -61,7 +61,7 @@ bool ServiceEndpoint::lockNext(int msToWait) {
     const TickType_t xTicksToWait = (msToWait) / portTICK_PERIOD_MS;
     if (xSemaphoreTake(_waitHandle, xTicksToWait) == pdTRUE)
     {
-        if (isReady() && connectClient()) {
+        if (isReady()) {
             result = true;
             _lastRequest = ServiceRequest(_client, _yieldHandle);
             _lastRequest.beginRequest(_nonce);
@@ -85,6 +85,10 @@ void ServiceEndpoint::assertNonce() {
 
 ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
     assertNonce();
+    if (!connectClient()) {
+        _lastRequest.fail("failed to connect to server");
+        return _lastRequest;
+    }
     _lastRequest.call("GET", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
     _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");

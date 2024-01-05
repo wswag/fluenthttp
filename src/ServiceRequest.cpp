@@ -5,6 +5,13 @@ void ServiceRequest::beginRequest(long nonce) {
     _nonce = nonce;
 }
 
+void ServiceRequest::fail(const char* message)
+{
+    _status = srsFailed;
+    _response = service_response_t();
+    _response.statusMessage = message;
+}
+
 void ServiceRequest::call(const char* method, const char* relativeUri) 
 {
     if (_status != srsArmed)
@@ -55,10 +62,12 @@ void ServiceRequest::handleResponseHeader() {
 void ServiceRequest::handleResponseContent() {
     _response.contentReader = _client;
     if (_response.statusCode >= 400) {
+        _status = srsFailed;
         if (_failCallback != 0)
             _failCallback(_response);
     }
     else {
+        _status = srsCompleted;
         if (_successCallback != 0) {
             _successCallback(_response);
         }
@@ -139,7 +148,14 @@ void ServiceRequest::yield() {
 
 void ServiceRequest::innerYield() {
     // block parallel yield calls
-    if (_status == srsIdle || _status == srsArmed || _status == srsIncomplete) return;
+    switch (_status) {
+        case srsIdle:
+        case srsArmed:
+        case srsIncomplete:
+        case srsCompleted:
+        case srsFailed:
+            return;
+    }
     
     size_t btr = 0;
     while ((btr = _client->available()) != 0 || 
@@ -176,6 +192,11 @@ ServiceRequest& ServiceRequest::addHeader(const char* key, const char* value) {
 }
 
 ServiceRequest& ServiceRequest::fire() {
+    if (_status == srsFailed) {
+        // call failed callback directly
+        if (_failCallback != 0)
+            _failCallback(_response);
+    }
     if (_status == srsIncomplete) {
         _client->println();
         _t0 = millis();
@@ -209,10 +230,18 @@ void ServiceRequest::cancel() {
 }
 
 void ServiceRequest::await() {
-    fire(); // to be sure.. won't have side effects if already fired
-    while (_status != srsIdle) {
+    switch (_status) {
+        case srsIdle:
+        case srsArmed:
+            return;
+        case srsIncomplete:
+            fire();
+        default: break;
+    }
+    
+    while (_status != srsCompleted && _status != srsFailed) {
         yield();
-        if (_status != srsIdle)
+        if (_status != srsCompleted && _status != srsFailed)
             vTaskDelay(10 / portTICK_RATE_MS);
     }
 }

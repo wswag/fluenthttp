@@ -34,13 +34,13 @@ void print_content(service_response_t r) {
 }
 
 void get_request(int timeout, bool sync) {
-  ServiceRequest& request = endpoint.get("/json");
+  ServiceRequest& request = endpoint.get("/publickey/");
   request.withTimeout(timeout)
       .onSuccess([=](service_response_t r) {
           print_content(r);
       })
       .onFailure([=](service_response_t r) {
-        printf("request failed\r\n");
+        printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
         // leads to stack overflow..
           //TEST_FAIL_MESSAGE("request failed");
       })
@@ -55,30 +55,32 @@ void get_request(int timeout, bool sync) {
 }
 
 void test_sync_implicit_await_calls_with_keepalive() {
-    endpoint.withKeepAlive();
+    endpoint.withKeepAlive(true);
     for (int k = 0; k <= 10; k++) {
         get_request(TIMEOUT, false);
     }
 }
 
 void test_sync_implicit_await_calls_with_close() {
-    endpoint.withCloseAfterRequest();
+    endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
         get_request(TIMEOUT, false);
+        endpoint.close();
     }
 }
 
 void test_sync_explicit_await_calls_with_keepalive() {
-    endpoint.withKeepAlive();
+    endpoint.withKeepAlive(true);
     for (int k = 0; k <= 10; k++) {
         get_request(TIMEOUT, true);
     }
 }
 
 void test_sync_explicit_await_calls_with_close() {
-    endpoint.withCloseAfterRequest();
+  endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
         get_request(TIMEOUT, true);
+        endpoint.close();
     }
 }
 
@@ -111,7 +113,6 @@ void test_parallel_explicit_await_calls() {
 }
 
 void test_timeout_continue() {
-    endpoint.withCloseAfterRequest();
     printf("request with timeout expected\r\n");
     get_request(1, true);
     printf("request with timeout expected\r\n");
@@ -127,7 +128,6 @@ void test_timeout_continue() {
 }
 
 void test_failure_continue() {
-    endpoint.withCloseAfterRequest();
     printf("request with timeout expected\r\n");
     get_request(1, true);
     printf("request with timeout expected\r\n");

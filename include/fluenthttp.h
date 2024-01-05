@@ -14,7 +14,7 @@ struct service_response_t {
     String statusMessage;
     String contentType;
     uint32_t contentLength = 0;
-    Stream* contentReader;
+    Stream* contentReader = nullptr;
     // TODO: Header Fields
 };
 
@@ -24,7 +24,9 @@ enum service_request_status_t {
     srsIncomplete = 2,
     srsAwaitResponse = 3,
     srsReadingHeader = 4,
-    srsReadingContent = 5
+    srsReadingContent = 5,
+    srsCompleted = 6,
+    srsFailed = 7
 };
 
 typedef std::function<void (service_response_t)> service_endpoint_callback_t;
@@ -54,6 +56,7 @@ class ServiceRequest {
         void innerYield();
 
         ServiceRequest(Client& s, SemaphoreHandle_t yieldHandle);
+        void fail(const char* message);
     public:
         // reads back the content by evaluating the content-length attribute
         static String stringContent(service_response_t r);

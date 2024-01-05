@@ -53,7 +53,7 @@ ServiceEndpoint& ServiceEndpoint::withKeepAlive(bool keepAliveHeader) {
 
 bool ServiceEndpoint::isReady() {
     auto s = _lastRequest.getStatus();
-    return (s == srsIdle);
+    return (s == srsIdle || s == srsCompleted || s == srsFailed);
 }
 
 bool ServiceEndpoint::lockNext(int msToWait) {
@@ -97,6 +97,10 @@ ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
 
 ServiceRequest& ServiceEndpoint::post(const char* relativeUri) {
     assertNonce();
+    if (!connectClient()) {
+        _lastRequest.fail("failed to connect to server");
+        return _lastRequest;
+    }
     _lastRequest.call("POST", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
     _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");

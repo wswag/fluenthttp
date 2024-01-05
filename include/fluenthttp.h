@@ -26,7 +26,8 @@ enum service_request_status_t {
     srsReadingHeader = 4,
     srsReadingContent = 5,
     srsCompleted = 6,
-    srsFailed = 7
+    srsPrefailed = 8,
+    srsFailed = 8
 };
 
 typedef std::function<void (service_response_t)> service_endpoint_callback_t;

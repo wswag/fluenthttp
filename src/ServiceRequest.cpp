@@ -7,7 +7,7 @@ void ServiceRequest::beginRequest(long nonce) {
 
 void ServiceRequest::fail(const char* message)
 {
-    _status = srsFailed;
+    _status = srsPrefailed;
     _response = service_response_t();
     _response.statusMessage = message;
 }
@@ -192,10 +192,11 @@ ServiceRequest& ServiceRequest::addHeader(const char* key, const char* value) {
 }
 
 ServiceRequest& ServiceRequest::fire() {
-    if (_status == srsFailed) {
+    if (_status == srsPrefailed) {
         // call failed callback directly
         if (_failCallback != 0)
             _failCallback(_response);
+        _status = srsFailed;
     }
     if (_status == srsIncomplete) {
         _client->println();
@@ -235,6 +236,7 @@ void ServiceRequest::await() {
         case srsArmed:
             return;
         case srsIncomplete:
+        case srsPrefailed:
             fire();
         default: break;
     }

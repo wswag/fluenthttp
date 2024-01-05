@@ -72,7 +72,6 @@ void ServiceRequest::handleResponseContent() {
             _successCallback(_response);
         }
     }
-    _status = srsIdle;
 }
 
 // reads back the content by evaluating the content-length attribute
@@ -178,7 +177,7 @@ void ServiceRequest::innerYield() {
         if (_timeoutCallback != 0)
             _timeoutCallback();
         _client->stop();
-        _status = srsIdle;
+        _status = srsFailed;
         return;
     }
 }

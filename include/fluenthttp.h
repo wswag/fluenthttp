@@ -77,7 +77,7 @@ class ServiceRequest {
         ServiceRequest& fireContent(size_t count, uint8_t* data);
         ServiceRequest& fireContent(String data);
 
-        void cancel();
+        void cancel(const char* message);
         void await();
         bool yield();
 

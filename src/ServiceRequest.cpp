@@ -141,9 +141,7 @@ bool ServiceRequest::yield() {
         catch (std::exception e)
         {
             // something failed on user code
-            fail(e.what());
-            // trigger failed handler immediately
-            fire();
+            cancel(e.what());
         }
         xSemaphoreGive(_yieldHandle);
     }
@@ -228,10 +226,11 @@ ServiceRequest& ServiceRequest::fireContent(String data) {
     return *this;
 }
 
-void ServiceRequest::cancel() {
-    if (_client->connected())
-        _client->stop();
-    _status = srsIdle;
+void ServiceRequest::cancel(const char* message) {
+    // something failed on user code
+    fail(message);
+    // trigger failed handler immediately
+    fire();
 }
 
 void ServiceRequest::await() {

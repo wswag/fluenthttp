@@ -133,7 +133,7 @@ ServiceRequest& ServiceRequest::withTimeout(uint32_t timeout) {
     return *this;
 }
 
-void ServiceRequest::yield() {
+bool ServiceRequest::yield() {
     if (xSemaphoreTake(_yieldHandle, 0)) {
         try {
             innerYield();
@@ -143,6 +143,7 @@ void ServiceRequest::yield() {
         }
         xSemaphoreGive(_yieldHandle);
     }
+    return _status == srsFailed || _status == srsCompleted;
 }
 
 void ServiceRequest::innerYield() {
@@ -240,10 +241,9 @@ void ServiceRequest::await() {
         default: break;
     }
     
-    while (_status != srsCompleted && _status != srsFailed) {
-        yield();
-        if (_status != srsCompleted && _status != srsFailed)
-            vTaskDelay(10 / portTICK_RATE_MS);
+    while (!yield())
+    {
+        vTaskDelay(10 / portTICK_RATE_MS);
     }
 }
 

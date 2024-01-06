@@ -79,7 +79,7 @@ class ServiceRequest {
 
         void cancel();
         void await();
-        void yield();
+        bool yield();
 
         service_request_status_t getStatus();
 };

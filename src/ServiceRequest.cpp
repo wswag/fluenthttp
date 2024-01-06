@@ -140,6 +140,10 @@ bool ServiceRequest::yield() {
         }
         catch (std::exception e)
         {
+            // something failed on user code
+            fail(e.what());
+            // trigger failed handler immediately
+            fire();
         }
         xSemaphoreGive(_yieldHandle);
     }

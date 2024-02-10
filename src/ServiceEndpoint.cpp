@@ -92,6 +92,7 @@ ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
     _lastRequest.call("GET", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
     _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
+    _lastRequest.withKeepAlive(_keepAlive);
     return _lastRequest;
 }
 

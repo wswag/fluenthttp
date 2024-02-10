@@ -63,14 +63,18 @@ void ServiceRequest::handleResponseContent() {
     _response.contentReader = _client;
     if (_response.statusCode >= 400) {
         _status = srsFailed;
-        if (_failCallback != 0)
+        if (_failCallback != 0) {
             _failCallback(_response);
+        }
     }
     else {
         _status = srsCompleted;
         if (_successCallback != 0) {
             _successCallback(_response);
         }
+    }
+    if (!_keepAlive) {
+        _client->stop();
     }
 }
 
@@ -198,6 +202,7 @@ ServiceRequest& ServiceRequest::fire() {
         // call failed callback directly
         if (_failCallback != 0)
             _failCallback(_response);
+        _client->stop();
         _status = srsFailed;
     }
     if (_status == srsIncomplete) {

@@ -46,6 +46,7 @@ class ServiceRequest {
         Client* _client;
         service_request_status_t _status = srsIdle;
         service_response_t _response = service_response_t();
+        bool _keepAlive = false;
         long _nonce = 0;
 
         void handleResponseBegin();
@@ -68,7 +69,7 @@ class ServiceRequest {
         ServiceRequest& onSuccess(service_endpoint_callback_t callback);
         ServiceRequest& onFailure(service_endpoint_callback_t callback);
         ServiceRequest& onTimeout(timeout_callback_t callback);
-        ServiceRequest& withKeepAlive();
+        ServiceRequest& withKeepAlive(bool keepAlive) { _keepAlive = keepAlive; }
         ServiceRequest& withTimeout(uint32_t timeout);
 
         

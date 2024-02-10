@@ -53,38 +53,47 @@ ServiceEndpoint& ServiceEndpoint::withKeepAlive(bool keepAliveHeader) {
 
 bool ServiceEndpoint::isReady() {
     auto s = _lastRequest.getStatus();
-    return (s == srsIdle || s == srsCompleted || s == srsFailed);
+    return (s == srsIdle || _lastRequest.finished());
 }
 
-bool ServiceEndpoint::lockNext(int msToWait) {
-    bool result = false;
+int ServiceEndpoint::lockNext(int msToWait) {
     const TickType_t xTicksToWait = (msToWait) / portTICK_PERIOD_MS;
     if (xSemaphoreTake(_waitHandle, xTicksToWait) == pdTRUE)
     {
-        if (isReady()) {
-            result = true;
-            _lastRequest = ServiceRequest(_client, _yieldHandle);
-            _lastRequest.beginRequest(_nonce);
-            _nonce++;
-        }
-        xSemaphoreGive(_waitHandle);
+        _lastRequest = ServiceRequest(_client, this);
+        _lastRequest.beginRequest(_nonce);
+        return _nonce;
     }
-    return result;
+    return -1;
+}
+
+void ServiceEndpoint::forceUnlock() {
+    if (!isReady()) {
+        _lastRequest.cancel("force unlock");
+    }
+    _nonce++;
+    xSemaphoreGive(_waitHandle);
 }
 
 void ServiceEndpoint::close() {
-    _client.stop();
-}
-
-void ServiceEndpoint::assertNonce() {
-    if (_lastRequest.getStatus() == srsIdle && _nonce != _lastRequest._nonce) {
-        while (!lockNext(100))
-            vTaskDelay(20 / portTICK_PERIOD_MS);
+    if (!isReady()) {
+        _lastRequest.cancel("force close");
+    }
+    else {
+        _client.stop();
     }
 }
 
-ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
-    assertNonce();
+void ServiceEndpoint::assertNonce(int nonce) {
+    if (_lastRequest._nonce != nonce) {
+        while (lockNext(100) == -1)
+        {
+        }
+    }
+}
+
+ServiceRequest& ServiceEndpoint::get(const char* relativeUri, int nonce) {
+    assertNonce(nonce);
     if (!connectClient()) {
         _lastRequest.fail("failed to connect to server");
         return _lastRequest;
@@ -96,8 +105,8 @@ ServiceRequest& ServiceEndpoint::get(const char* relativeUri) {
     return _lastRequest;
 }
 
-ServiceRequest& ServiceEndpoint::post(const char* relativeUri) {
-    assertNonce();
+ServiceRequest& ServiceEndpoint::post(const char* relativeUri, int nonce) {
+    assertNonce(nonce);
     if (!connectClient()) {
         _lastRequest.fail("failed to connect to server");
         return _lastRequest;

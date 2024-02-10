@@ -24,6 +24,15 @@ void ServiceRequest::call(const char* method, const char* relativeUri)
     _client->println(" HTTP/1.1");
 }
 
+void ServiceRequest::finalize(service_request_status_t status)
+{
+    _status = status;
+    if (!_keepAlive) {
+        _client->stop();
+    }
+    _endpoint->forceUnlock();
+}
+
 void ServiceRequest::handleResponseBegin() 
 {
     String line = _client->readStringUntil('\n'); // next line
@@ -62,19 +71,16 @@ void ServiceRequest::handleResponseHeader() {
 void ServiceRequest::handleResponseContent() {
     _response.contentReader = _client;
     if (_response.statusCode >= 400) {
-        _status = srsFailed;
         if (_failCallback != 0) {
             _failCallback(_response);
         }
+        finalize(srsFailed);
     }
     else {
-        _status = srsCompleted;
         if (_successCallback != 0) {
             _successCallback(_response);
         }
-    }
-    if (!_keepAlive) {
-        _client->stop();
+        finalize(srsCompleted);
     }
 }
 
@@ -112,8 +118,8 @@ ServiceRequest::ServiceRequest()
         : _client(nullptr) {
 }
 
-ServiceRequest::ServiceRequest(Client& s, SemaphoreHandle_t yieldHandle) 
-        : _client(&s), _yieldHandle(yieldHandle) {
+ServiceRequest::ServiceRequest(Client& s, ServiceEndpoint* endpoint) 
+        : _client(&s), _endpoint(endpoint) {
 
 }
 
@@ -138,7 +144,7 @@ ServiceRequest& ServiceRequest::withTimeout(uint32_t timeout) {
 }
 
 bool ServiceRequest::yield() {
-    if (xSemaphoreTake(_yieldHandle, 0)) {
+    if (xSemaphoreTake(_endpoint->_yieldHandle, 0)) {
         try {
             innerYield();
         }
@@ -147,9 +153,9 @@ bool ServiceRequest::yield() {
             // something failed on user code
             cancel(e.what());
         }
-        xSemaphoreGive(_yieldHandle);
+        xSemaphoreGive(_endpoint->_yieldHandle);
     }
-    return _status == srsFailed || _status == srsCompleted;
+    return finished();
 }
 
 void ServiceRequest::innerYield() {
@@ -183,8 +189,7 @@ void ServiceRequest::innerYield() {
     if  (_timeout != 0 && (millis() - _t0) >= _timeout) {
         if (_timeoutCallback != 0)
             _timeoutCallback();
-        _client->stop();
-        _status = srsFailed;
+        finalize(srsFailed);
         return;
     }
 }
@@ -202,8 +207,7 @@ ServiceRequest& ServiceRequest::fire() {
         // call failed callback directly
         if (_failCallback != 0)
             _failCallback(_response);
-        _client->stop();
-        _status = srsFailed;
+        finalize(srsFailed);
     }
     if (_status == srsIncomplete) {
         _client->println();
@@ -232,10 +236,14 @@ ServiceRequest& ServiceRequest::fireContent(String data) {
 }
 
 void ServiceRequest::cancel(const char* message) {
-    // something failed on user code
-    fail(message);
-    // trigger failed handler immediately
-    fire();
+    if (xSemaphoreTake(_endpoint->_yieldHandle, 1000)) {
+        if (finished()) return;
+        // something failed on user code
+        fail(message);
+        // trigger failed handler immediately
+        fire();
+        xSemaphoreGive(_endpoint->_yieldHandle);
+    }
 }
 
 void ServiceRequest::await() {

@@ -1,10 +1,18 @@
 #include <Arduino.h>
 #include <unity.h>
-#include <WiFi.h>
 #include <fluenthttp.h>
 #include <env.h>
 
+#ifdef WIFI_CLIENT
+#include <WiFi.h>
 WiFiClient client;
+#else
+#include <Ethernet.h>
+#include <EthernetClient.h>
+EthernetClient client;
+#endif
+
+
 ServiceEndpoint endpoint(client, TEST_ENDPOINT);
 
 const int TIMEOUT = 500;
@@ -35,9 +43,13 @@ void print_content(service_response_t r) {
 
 void get_request(int timeout, bool sync) {
   ServiceRequest& request = endpoint.get("/publickey/");
+  bool success = false;
+  bool* successPtr = &success;
   request.withTimeout(timeout)
       .onSuccess([=](service_response_t r) {
-          print_content(r);
+          *successPtr = true;
+          printf("request succeeded\r\n");
+          //print_content(r);
       })
       .onFailure([=](service_response_t r) {
         printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
@@ -50,14 +62,16 @@ void get_request(int timeout, bool sync) {
          // TEST_FAIL_MESSAGE("request timed out");
       })
       .fire();
-    if (sync)
+    if (sync) {
       request.await();
+      TEST_ASSERT_TRUE(success);
+    }
 }
 
 void test_sync_implicit_await_calls_with_keepalive() {
-    endpoint.withKeepAlive(true);
+    endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
-        get_request(TIMEOUT, false);
+        get_request(TIMEOUT, true);
     }
 }
 
@@ -65,7 +79,7 @@ void test_sync_implicit_await_calls_with_close() {
     endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
         get_request(TIMEOUT, false);
-        endpoint.close();
+        //endpoint.close();
     }
 }
 
@@ -80,7 +94,7 @@ void test_sync_explicit_await_calls_with_close() {
   endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
         get_request(TIMEOUT, true);
-        endpoint.close();
+        //endpoint.close();
     }
 }
 
@@ -152,31 +166,43 @@ void setup()
 
   UNITY_BEGIN(); // IMPORTANT LINE!
 
+  #ifdef WIFI_CLIENT
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWD);
   while (!WiFi.isConnected()) {
     digitalWrite(LED_BUILTIN, (digitalRead(LED_BUILTIN) + 1) % 2);
     delay(300);
   }
+  #else
+  log_d("initializing ethernet on cs pin %d", ETHERNET_SPI_CS_PIN);
+  Ethernet.init(ETHERNET_SPI_CS_PIN);
+  uint8_t mac[6] = ETHERNET_MAC_ADDRESS;
+  if (!Ethernet.begin(mac)) {
+    log_e("eth connection failed");
+  }
+  #endif
 
-  RUN_TEST(test_timeout_continue);
-
-  TaskHandle_t handle1, handle2;
-  xTaskCreate(parallel_task, "t1", 8192, nullptr, 5, &handle1);
-  xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &handle2);
+  TaskHandle_t handle1, handle2, handle3, yieldHandle;
+  xTaskCreate(parallel_task, "t1", 12000, nullptr, 5, &handle1);
+  xTaskCreate(parallel_task, "t2", 12000, nullptr, 5, &handle2);
+  xTaskCreate(parallel_task, "t3", 12000, nullptr, 5, &handle3);
+  xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
 
   RUN_TEST(test_sync_explicit_await_calls_with_close);
   RUN_TEST(test_sync_implicit_await_calls_with_close);
   RUN_TEST(test_sync_explicit_await_calls_with_keepalive);
   RUN_TEST(test_sync_implicit_await_calls_with_keepalive);
-  
+  RUN_TEST(test_parallel_explicit_await_calls);
+  RUN_TEST(test_timeout_continue);
+
+//  UNITY_END();
 }
 
 void loop()
 {
   static int i = 0;
   RUN_TEST(test_parallel_explicit_await_calls);
-  if (i >= 100)
+  if (i >= 3)
     UNITY_END(); // stop unit testing
   i++;
 }

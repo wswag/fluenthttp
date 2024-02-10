@@ -33,10 +33,12 @@ enum service_request_status_t {
 typedef std::function<void (service_response_t)> service_endpoint_callback_t;
 typedef std::function<void ()> timeout_callback_t;
 
+class ServiceEndpoint;
+
 class ServiceRequest {
     friend class ServiceEndpoint;
     private:
-        SemaphoreHandle_t _yieldHandle; // will be pushed from endpoint
+        ServiceEndpoint* _endpoint; // will be pushed from endpoint
 
         service_endpoint_callback_t _successCallback = 0;
         service_endpoint_callback_t _failCallback = 0;
@@ -57,8 +59,10 @@ class ServiceRequest {
         void call(const char* method, const char* relativeUri);
         void innerYield();
 
-        ServiceRequest(Client& s, SemaphoreHandle_t yieldHandle);
+        ServiceRequest(Client& s, ServiceEndpoint* endpoint);
         void fail(const char* message);
+
+        void finalize(service_request_status_t status);
     public:
         // reads back the content by evaluating the content-length attribute
         static String stringContent(service_response_t r);
@@ -69,7 +73,7 @@ class ServiceRequest {
         ServiceRequest& onSuccess(service_endpoint_callback_t callback);
         ServiceRequest& onFailure(service_endpoint_callback_t callback);
         ServiceRequest& onTimeout(timeout_callback_t callback);
-        ServiceRequest& withKeepAlive(bool keepAlive) { _keepAlive = keepAlive; }
+        ServiceRequest& withKeepAlive(bool keepAlive) { _keepAlive = keepAlive; return *this; }
         ServiceRequest& withTimeout(uint32_t timeout);
 
         
@@ -81,11 +85,13 @@ class ServiceRequest {
         void cancel(const char* message);
         void await();
         bool yield();
+        bool finished() { return _status == srsCompleted || _status == srsFailed; }
 
         service_request_status_t getStatus();
 };
 
 class ServiceEndpoint {
+    friend class ServiceRequest;
     private:
         Client& _client;
         String _hostname;
@@ -99,10 +105,10 @@ class ServiceEndpoint {
         SemaphoreHandle_t _waitHandle;
         SemaphoreHandle_t _yieldHandle;
 
-        long _nonce = 1;
+        uint16_t _nonce = 1;
 
         int connectClient();
-        void assertNonce();
+        void assertNonce(int nonce);
         void createSemaphores();
     public:
         ServiceEndpoint(Client& client, const char* hostname);
@@ -116,9 +122,11 @@ class ServiceEndpoint {
         void close();
 
         bool isReady();
-        bool lockNext(int msToWait);
-        ServiceRequest& get(const char* relativeUri);
-        ServiceRequest& post(const char* relativeUri);
+        int lockNext(int msToWait);
+        void forceUnlock();
+
+        ServiceRequest& get(const char* relativeUri, int nonce = -1);
+        ServiceRequest& post(const char* relativeUri, int nonce = -1);
 
         IPAddress getIPAdress() { return _ipaddr; }
         const char* getHostname() { return _hostname.c_str(); }

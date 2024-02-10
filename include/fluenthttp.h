@@ -93,7 +93,7 @@ class ServiceRequest {
 class ServiceEndpoint {
     friend class ServiceRequest;
     private:
-        Client& _client;
+        Client* _client = nullptr;
         String _hostname;
         IPAddress _ipaddr;
         uint16_t _port;
@@ -111,14 +111,15 @@ class ServiceEndpoint {
         void assertNonce(int nonce);
         void createSemaphores();
     public:
-        ServiceEndpoint(Client& client, const char* hostname);
-        ServiceEndpoint(Client& client, const char* hostname, uint16_t port);
-        ServiceEndpoint(Client& client, IPAddress ip);
-        ServiceEndpoint(Client& client, IPAddress ip, uint16_t port);
+        ServiceEndpoint(const char* hostname);
+        ServiceEndpoint(const char* hostname, uint16_t port);
+        ServiceEndpoint(IPAddress ip);
+        ServiceEndpoint(IPAddress ip, uint16_t port);
 
         ServiceEndpoint& withKeepAlive(bool keepAliveHeader);
 
         // close the underlying client
+        void begin(Client* client);
         void close();
 
         bool isReady();

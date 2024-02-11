@@ -125,7 +125,7 @@ class ServiceEndpoint {
         bool isReady();
         int lockNext(int msToWait);
         void forceUnlock();
-
+        
         ServiceRequest& get(const char* relativeUri, int nonce = -1);
         ServiceRequest& post(const char* relativeUri, int nonce = -1);
 

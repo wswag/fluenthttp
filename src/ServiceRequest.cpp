@@ -37,12 +37,16 @@ void ServiceRequest::handleResponseBegin()
 {
     String line = _client->readStringUntil('\n'); // next line
     unsigned int statusCode = 0;
-    sscanf(line.c_str(), "HTTP/1.1 %u", &statusCode);
+    int httpSubversion = 0;
+    sscanf(line.c_str(), "HTTP/1.%u %u", &httpSubversion, &statusCode);
     if (statusCode != 0) {
         _response.statusMessage = line.substring(12);
         _response.statusMessage.trim();
         _response.statusCode = statusCode;
         _status = srsReadingHeader;
+        if (httpSubversion == 0) {
+            _keepAlive = false; // close after request
+        }
     }
 }
 

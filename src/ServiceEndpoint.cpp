@@ -103,7 +103,8 @@ ServiceRequest& ServiceEndpoint::get(const char* relativeUri, int nonce) {
         return _lastRequest;
     }
     _lastRequest.call("GET", relativeUri);
-    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
+    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
+    _lastRequest.addHeader("Accept", "*/*");
     _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
     _lastRequest.withKeepAlive(_keepAlive);
     return _lastRequest;
@@ -116,7 +117,8 @@ ServiceRequest& ServiceEndpoint::post(const char* relativeUri, int nonce) {
         return _lastRequest;
     }
     _lastRequest.call("POST", relativeUri);
-    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : String(_ipaddr).c_str());
+    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
+    _lastRequest.addHeader("Accept", "*/*");
     _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
     return _lastRequest;
 }

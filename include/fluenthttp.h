@@ -14,8 +14,11 @@ struct service_response_t {
     String statusMessage;
     String contentType;
     uint32_t contentLength = 0;
+    bool chunked = false;
     Stream* contentReader = nullptr;
     // TODO: Header Fields
+
+    int nextChunk();
 };
 
 enum service_request_status_t {

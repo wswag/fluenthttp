@@ -1,5 +1,24 @@
 #include "fluenthttp.h"
 
+int service_response_t::nextChunk() {
+    if (this->contentReader->available() == 0) return 0;
+    if (!this->chunked) {
+        return this->contentLength;
+    }
+    else
+    {
+        String chunkLenHex;
+        do {
+            if (this->contentReader->available() == 0) return 0;
+            chunkLenHex = this->contentReader->readStringUntil('\n');
+            chunkLenHex.trim();
+            chunkLenHex.toUpperCase();
+        } while (chunkLenHex.length() == 0);
+        int chunkLen = strtol(chunkLenHex.c_str(), nullptr, 16);
+        return chunkLen;
+    }
+}
+
 void ServiceRequest::beginRequest(long nonce) {
     _status = srsArmed;
     _nonce = nonce;
@@ -69,6 +88,25 @@ void ServiceRequest::handleResponseHeader() {
     }
     else if (key == "Content-Type") {
         _response.contentType = val;
+    }
+    else if (key == "Transfer-Encoding") {
+        /*
+        Transfer-Encoding: chunked
+        Transfer-Encoding: compress
+        Transfer-Encoding: deflate
+        Transfer-Encoding: gzip
+
+        // Several values can be listed, separated by a comma
+        Transfer-Encoding: gzip, chunked
+
+        For now: only support chunked mode...
+        */
+
+       if (val == "chunked") {
+         _response.chunked = true;
+       } else {
+        fail(("server side Transfer-Encoding not supported: " + val).c_str());
+       }
     }
 }
 

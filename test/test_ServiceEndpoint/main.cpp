@@ -13,7 +13,7 @@ EthernetClient client;
 #endif
 
 
-ServiceEndpoint endpoint(client, TEST_ENDPOINT);
+ServiceEndpoint endpoint(TEST_ENDPOINT);
 
 const int TIMEOUT = 500;
 
@@ -48,6 +48,43 @@ void get_request(int timeout, bool sync) {
   request.withTimeout(timeout)
       .onSuccess([=](service_response_t r) {
           *successPtr = true;
+          printf("request succeeded\r\n");
+          //print_content(r);
+      })
+      .onFailure([=](service_response_t r) {
+        printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
+        // leads to stack overflow..
+          //TEST_FAIL_MESSAGE("request failed");
+      })
+      .onTimeout([=] {
+        printf("request timed out\r\n");
+        // leads to stack overflow..
+         // TEST_FAIL_MESSAGE("request timed out");
+      })
+      .fire();
+    if (sync) {
+      request.await();
+      TEST_ASSERT_TRUE(success);
+    }
+}
+
+void get_request_chunked(int timeout, bool sync) {
+  ServiceRequest& request = endpoint.get("/firmware/Tester/image/chunk?start=0&len=4096");
+  bool success = false;
+  bool* successPtr = &success;
+  request.withTimeout(timeout)
+      .onSuccess([=](service_response_t r) {
+          *successPtr = true;
+          int chunk = r.nextChunk();
+          byte buffer[4096];
+          int n = 1;
+          while (chunk != 0) {
+            printf("chunk %d: %d bytes\r\n", n, chunk);
+            r.contentReader->readBytes(buffer, chunk);
+            log_print_buf(buffer, chunk);
+            n++;
+            chunk = r.nextChunk();
+          }
           printf("request succeeded\r\n");
           //print_content(r);
       })
@@ -156,6 +193,10 @@ void test_failure_continue() {
     get_request(500, true);
 }
 
+void test_chunked_transferencoding() {
+  get_request_chunked(1000, true);
+}
+
 void setup()
 {
   // NOTE!!! Wait for >2 secs
@@ -182,12 +223,15 @@ void setup()
   }
   #endif
 
+  endpoint.begin(&client);
+
   TaskHandle_t handle1, handle2, handle3, yieldHandle;
   xTaskCreate(parallel_task, "t1", 12000, nullptr, 5, &handle1);
   xTaskCreate(parallel_task, "t2", 12000, nullptr, 5, &handle2);
   xTaskCreate(parallel_task, "t3", 12000, nullptr, 5, &handle3);
   xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
 
+  RUN_TEST(test_chunked_transferencoding);
   RUN_TEST(test_sync_explicit_await_calls_with_close);
   RUN_TEST(test_sync_implicit_await_calls_with_close);
   RUN_TEST(test_sync_explicit_await_calls_with_keepalive);

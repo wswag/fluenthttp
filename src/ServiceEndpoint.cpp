@@ -64,19 +64,27 @@ int ServiceEndpoint::lockNext(int msToWait) {
     const TickType_t xTicksToWait = (msToWait) / portTICK_PERIOD_MS;
     if (xSemaphoreTake(_waitHandle, xTicksToWait) == pdTRUE)
     {
-        _lastRequest = ServiceRequest(*_client, this);
+        _lastRequest = ServiceRequest(nullptr, this);
         _lastRequest.beginRequest(_nonce);
         return _nonce;
     }
     return -1;
 }
 
-void ServiceEndpoint::forceUnlock() {
-    if (!isReady()) {
-        _lastRequest.cancel("force unlock");
+bool ServiceEndpoint::unlock(int nonce) {
+    if (nonce == _nonce) {
+        if (!isReady()) {
+            _lastRequest.cancel("unlock cancel");
+        }
+        _nonce++;
+        xSemaphoreGive(_waitHandle);
+        return true;
     }
-    _nonce++;
-    xSemaphoreGive(_waitHandle);
+    return false;
+}
+
+void ServiceEndpoint::forceUnlock() {
+    unlock(_nonce);
 }
 
 void ServiceEndpoint::close() {
@@ -102,6 +110,7 @@ ServiceRequest& ServiceEndpoint::get(const char* relativeUri, int nonce) {
         _lastRequest.fail("failed to connect to server");
         return _lastRequest;
     }
+    _lastRequest._client = _client;
     _lastRequest.call("GET", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
     _lastRequest.addHeader("Accept", "*/*");
@@ -116,6 +125,7 @@ ServiceRequest& ServiceEndpoint::post(const char* relativeUri, int nonce) {
         _lastRequest.fail("failed to connect to server");
         return _lastRequest;
     }
+    _lastRequest._client = _client;
     _lastRequest.call("POST", relativeUri);
     _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
     _lastRequest.addHeader("Accept", "*/*");

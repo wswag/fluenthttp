@@ -62,7 +62,7 @@ class ServiceRequest {
         void call(const char* method, const char* relativeUri);
         void innerYield();
 
-        ServiceRequest(Client& s, ServiceEndpoint* endpoint);
+        ServiceRequest(Client* s, ServiceEndpoint* endpoint);
         void fail(const char* message);
 
         void finalize(service_request_status_t status);
@@ -128,6 +128,7 @@ class ServiceEndpoint {
         bool isReady();
         int lockNext(int msToWait);
         void forceUnlock();
+        bool unlock(int nonce);
         
         ServiceRequest& get(const char* relativeUri, int nonce = -1);
         ServiceRequest& post(const char* relativeUri, int nonce = -1);

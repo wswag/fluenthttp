@@ -35,18 +35,26 @@ void ServiceRequest::call(const char* method, const char* relativeUri)
 {
     if (_status != srsArmed)
         return;
+    //log_w("[%X]!> call vs %X", ((size_t)this), _client);
     _status = srsIncomplete;
     // check if client is connected, connect otherwise
     _client->print(method);
     _client->print(' ');
     _client->print(relativeUri); // TODO: URL Encode
     _client->println(" HTTP/1.1");
+
+    //Serial.printf("[%X]> ", (uint8_t)((size_t)this));
+    //Serial.print(method);
+    //Serial.print(' ');
+    //Serial.print(relativeUri); // TODO: URL Encode
+    //Serial.println(" HTTP/1.1");
 }
 
 void ServiceRequest::finalize(service_request_status_t status)
 {
+    //log_w("[%X]!> finalize vs %X", ((size_t)this), _client);
     _status = status;
-    if (!_keepAlive) {
+    if (!_keepAlive && _client != nullptr) {
         _client->stop();
     }
     _endpoint->forceUnlock();
@@ -55,6 +63,7 @@ void ServiceRequest::finalize(service_request_status_t status)
 void ServiceRequest::handleResponseBegin() 
 {
     String line = _client->readStringUntil('\n'); // next line
+    //Serial.printf("[%X]> %s", (uint8_t)((size_t)this), line.c_str());
     unsigned int statusCode = 0;
     int httpSubversion = 0;
     sscanf(line.c_str(), "HTTP/1.%u %u", &httpSubversion, &statusCode);
@@ -71,9 +80,11 @@ void ServiceRequest::handleResponseBegin()
 
 void ServiceRequest::handleResponseHeader() {
     int peek = _client->peek();
+    //Serial.printf("[%X]> ", (uint8_t)((size_t)this));
     if (peek == '\r' || peek == '\n') {
         // header ends, content starts
         _client->readStringUntil('\n');
+        //Serial.println();
         _status = srsReadingContent;
         return;
     }
@@ -81,6 +92,7 @@ void ServiceRequest::handleResponseHeader() {
     // read next header field
     String key = _client->readStringUntil(':');
     String val = _client->readStringUntil('\n');
+    //Serial.printf("%s: %s\r\s", key.c_str(), val.c_str());
     val.trim();
     
     if (key == "Content-Length") {
@@ -160,8 +172,8 @@ ServiceRequest::ServiceRequest()
         : _client(nullptr) {
 }
 
-ServiceRequest::ServiceRequest(Client& s, ServiceEndpoint* endpoint) 
-        : _client(&s), _endpoint(endpoint) {
+ServiceRequest::ServiceRequest(Client* s, ServiceEndpoint* endpoint) 
+        : _client(s), _endpoint(endpoint) {
 
 }
 
@@ -241,6 +253,11 @@ ServiceRequest& ServiceRequest::addHeader(const char* key, const char* value) {
     _client->print(key);
     _client->print(": ");
     _client->println(value);
+
+    //Serial.printf("[%X]> ", (uint8_t)((size_t)this));
+    //Serial.print(key);
+    //Serial.print(": ");
+    //Serial.println(value);
     return *this;
 }
 
@@ -253,6 +270,8 @@ ServiceRequest& ServiceRequest::fire() {
     }
     if (_status == srsIncomplete) {
         _client->println();
+         //Serial.printf("[%X]> ", (uint8_t)((size_t)this));
+         //Serial.println();
         _t0 = millis();
         _status = srsAwaitResponse;
     }

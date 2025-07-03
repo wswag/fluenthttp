@@ -5,7 +5,8 @@
 
 #ifdef WIFI_CLIENT
 #include <WiFi.h>
-WiFiClient client;
+#include <BufferlessWiFiClient.h>
+BufferlessWiFiClient client;
 #else
 #include <Ethernet.h>
 #include <EthernetClient.h>
@@ -42,13 +43,16 @@ void print_content(service_response_t r) {
 }
 
 void get_request(int timeout, bool sync) {
+  static int n = 0;
+  n++;
+  printf("get request %d\r\n", n);
   ServiceRequest& request = endpoint.get("/publickey/");
   bool success = false;
   bool* successPtr = &success;
   request.withTimeout(timeout)
       .onSuccess([=](service_response_t r) {
           *successPtr = true;
-          printf("request succeeded\r\n");
+          printf("request %d succeeded at %d, content length %d\r\n", n, millis(), r.contentLength);
           //print_content(r);
       })
       .onFailure([=](service_response_t r) {
@@ -60,9 +64,11 @@ void get_request(int timeout, bool sync) {
         printf("request timed out\r\n");
         // leads to stack overflow..
          // TEST_FAIL_MESSAGE("request timed out");
-      })
-      .fire();
+      });
+    printf("fire request %d\r\n", n);
+    request.fire();
     if (sync) {
+      printf("await request %d\r\n", n);
       request.await();
       TEST_ASSERT_TRUE(success);
     }

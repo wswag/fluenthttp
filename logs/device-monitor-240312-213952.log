@@ -1,282 +1,0 @@
-21:39:53.750 > [37me[37mt[37ms Jun  8 2016 00:22:[37m5[37m7
-21:39:53.753 > 
-21:39:53.753 > rst:0x[37m1[37m (POWERON_[37mR[37mESET),boot:[37m0[37mx13 (SPI_F[37mA[37mST_FLASH_BO[37mO[37mT)
-21:39:53.758 > configs[37mi[37mp: 0, SPIW[37mP[37m:0xee
-21:39:53.760 > clk_[37md[37mrv:0x00,q_d[37mr[37mv:0x00,d_d[37mr[37mv:0x00,cs0_[37md[37mrv:0x00,hd[37m_[37mdrv:0x00,wp_drv:0x00
-21:39:53.767 > m[37mode:DIO, cl[37mo[37mck div:2
-21:39:53.768 > l[37mo[37mad:0x3fff0[37m0[37m30,len:1184[37m[37m
-21:39:53.771 > load:0x40[37m0[37m78000,len:1[37m3[37m232
-21:39:53.773 > load:0[37mx[37m40080400,len:3028
-21:39:53.776 > ent[37mry 0x400805[37me[37m4
-21:39:57.675 > [37mr[37me[37mquest succ[37meeded
-21:39:57.678 > Gur[37mu[37m Meditation Error: Core  1 panic'ed (StorePro[37mh[37mibited). Ex[37mc[37meption was[37m unhandled.[37m
-21:39:57.686 > [37m
-21:39:57.686 > Core  1 [37mregister dum[37mp[37m:
-21:39:57.687 > PC     [37m [37m: 0x401433c[37md[37m  PS      [37m:[37m 0x00060330[37m [37m A0      : 0x8013d0b8 [37m [37mA1      : 0[37mx[37m3ffdb8b0  [37m[37m
-21:39:57.695 > A2      : [37m0[37mx3ffdbab0 [37m [37mA3      : 0[37mx[37m00000001  [37mA[37m4      : 0x[37m3[37mffdbab0  A[37m5[37m      : 0x3[37mf[37mfdb8b4  
-21:39:57.703 > A6      : 0x[37m0[37m0001000  A[37m7      : 0x3[37mf[37mfdb8b0  A8 [37m [37m    : 0x00[37m0[37m00000  A9  [37m [37m   : 0x000[37m0[37m0008  
-21:39:57.711 > A10[37m     : 0x00[37m0[37m00000  A11[37m [37m    : 0x000[37m0[37m0001  A12     : 0x00000000  A13  [37m [37m  : 0x00000010  
-21:39:57.720 > A14     : 0x0000[37m0068  A15   [37m [37m : 0x3ffdbc40  SAR    [37m [37m: 0x000000[37m0[37ma  EXCCAUSE[37m:[37m 0x0000001[37md[37m  
-21:39:57.726 > EXCVADD[37mR[37m: 0x000000[37m0[37m0  LBEG    [37m:[37m 0x40089e4[37m5[37m  LEND    :[37m [37m0x40089e55 [37m LCOUNT  : [37m0[37mxfffffffe  
-21:39:57.734 > 
-21:39:57.734 > 
-21:39:57.734 > Backt[37mr[37mace: 0x4014[37m3[37m3ca:0x3ffdb8b0 0x4013d[37m0[37mb5:0x3ffdb[37mc40 0x400d35[37m7[37m9:0x3ffdbd[37m00 0x400d29b[37m3:0x3ffdbd5[37m0[37m 0x400d2b3e:0x3ffdcd80[37m [37m0x400d39ef:0x3ffdcde0 [37m0x400d3a67:0[37mx3ffdce00 0x400d3b06:0x3ffdce60 0x[37m400d3be5:0x3[37mffdce80 0x4[37m0[37m0d2977:0x3f[37mf[37mdceb0
-21:39:58.013 > 
-21:39:58.013 >   #0  0x401433ca:0x3ffdb8b0 in __ssvfscanf_r at /builds/idf/crosstool-NG/.build/xtensa-esp32-elf/src/newlib/newlib/libc/stdio/vfscanf.c:1531
-21:39:58.013 >   #1  0x4013d0b5:0x3ffdbc40 in sscanf at /builds/idf/crosstool-NG/.build/xtensa-esp32-elf/src/newlib/newlib/libc/stdio/sscanf.c:439
-21:39:58.013 >   #2  0x400d3579:0x3ffdbd00 in service_response_t::nextChunk() at src/ServiceRequest.cpp:18
-21:39:58.013 >   #3  0x400d29b3:0x3ffdbd50 in _ZZ19get_request_chunkedibENKUl18service_response_tE_clES_$isra$9 at test/test_ServiceEndpoint/main.cpp:79
-21:39:58.013 >   #4  0x400d2b3e:0x3ffdcd80 in std::_Function_handler<void (service_response_t), get_request_chunked(int, bool)::{lambda(service_response_t)#1}>::_M_invoke(std::_Any_data const&, service_response_t&&) at /home/swagner/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/bits/std_function.h:297
-21:39:58.013 >   #5  0x400d39ef:0x3ffdcde0 in std::function<void (service_response_t)>::operator()(service_response_t) const at /home/swagner/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/bits/std_function.h:687
-21:39:58.013 >   #6  0x400d3a67:0x3ffdce00 in ServiceRequest::handleResponseContent() at src/ServiceRequest.cpp:127
-21:39:58.013 >   #7  0x400d3b06:0x3ffdce60 in ServiceRequest::innerYield() at src/ServiceRequest.cpp:227
-21:39:58.013 >       (inlined by) ServiceRequest::innerYield() at src/ServiceRequest.cpp:207
-21:39:58.013 >   #8  0x400d3be5:0x3ffdce80 in ServiceRequest::yield() at src/ServiceRequest.cpp:195
-21:39:58.013 >   #9  0x400d2977:0x3ffdceb0 in yield_task(void*) at test/test_ServiceEndpoint/main.cpp:145
-21:39:58.013 > 
-21:39:58.013 > 
-21:39:58.013 > 
-21:39:58.013 > 
-21:39:58.013 > ELF file SHA256: a[37m1ec3b15d9ad8ff4
-21:39:58.014 > 
-21:39:58.066 > [37mR[37me[37mbooting...[37m[37m
-21:39:58.068 > ets J[37mun  8 2016 [37m0[37m0:22:57
-21:39:58.070 > 
-21:39:58.071 > [37mr[37mst:0xc (SW[37m_[37mCPU_RESET),[37mb[37moot:0x13 ([37mS[37mPI_FAST_FLA[37mS[37mH_BOOT)
-21:39:58.075 > c[37mo[37mnfigsip: 0,[37m [37mSPIWP:0xee[37m
-21:39:58.078 > clk_drv:0x[37m0[37m0,q_drv:0x[37m00,d_drv:0x0[37m0[37m,cs0_drv:0[37mx00,hd_drv:0[37mx00,wp_drv:0x00
-21:39:58.085 > mode:DIO, clock di[37mv:2
-21:39:58.089 > load:0x3fff0030,len:1184
-21:39:58.089 > loa[37md:0x40078000,len:13232[37m
-21:39:58.093 > [37mload:0x40080400,len:3028
-21:39:58.093 > entry 0x[37m4[37m00805e4
-21:40:01.592 > [37mr[37me[37mques[37mt[37m succeeded[37m[37m
-21:40:01.595 > Guru Meditation Erro[37mr: Core  1 [37mpanic'ed (StoreProhibited). Excepti[37mo[37mn was unhan[37md[37mled.
-21:40:01.602 > 
-21:40:01.602 > Co[37mre  1 regist[37me[37mr dump:
-21:40:01.604 > P[37mC      : 0x4[37m0[37m1433cd  PS      : 0x00[37m0[37m60330  A0 [37m [37m    : 0x801[37m3[37md0b8  A1  [37m    : 0x3ffb[37m0[37mb80  
-21:40:01.612 > A2 [37m     : 0x3ff[37mb[37m0d80  A3   [37m [37m  : 0x0000[37m0001  A4    [37m  : 0x3ffb0[37md[37m80  A5     [37m : 0x3ffb0b[37m8[37m4  
-21:40:01.620 > A6    [37m  : 0x00001[37m0[37m00  A7     [37m : 0x3ffb0b[37m8[37m0  A8      [37m: 0x0000000[37m0[37m  A9      :[37m [37m0x00000008[37m [37m 
-21:40:01.627 > A10     [37m:[37m 0x0000000[37m0[37m  A11     :[37m 0x00000001[37m [37m A12     : [37m0[37mx00000000 [37m [37mA13     : 0x00000010  [37m
-21:40:01.635 > [37mA14     : [37m0[37mx00000068  A15     : 0[37mx[37m3ffb0f10  S[37mAR     : 0x[37m0[37m000000a  EX[37mC[37mCAUSE: 0x0[37m0[37m00001d  
-21:40:01.643 > E[37mXCVADDR: 0x[37m0[37m0000000  LB[37mE[37mG    : 0x4[37m0[37m089e45  LEND    : 0x40089e55  LCOU[37mN[37mT  : 0xfff[37mf[37mfffe  
-21:40:01.651 > 
-21:40:01.651 > [37m
-21:40:01.651 > Backtrace:[37m [37m0x401433ca:[37m0x3ffb0b80 [37m0[37mx4013d0b5:0x3ffb0f10 0[37mx[37m400d3579:0x[37m3[37mffb0fd0 0x[37m4[37m00d29b3:0x3[37mf[37mfb1020 0x4[37m00d2b3e:0x3ffb2050 0x40[37m0[37md39ef:0x3ff[37mb20b0 0x400[37md3a67:0x3ffb[37m2[37m0d0 0x400d3b06:0x3ffb2[37m1[37m30 0x400d3[37mb[37me5:0x3ffb21[37m5[37m0 0x400d3c[37m7[37m6:0x3ffb218[37m0[37m 0x400d2e52[37m:0x3ffb21a0 0x400d2eac:[37m0[37mx3ffb2200 [37m0[37mx400d69ed:0[37mx[37m3ffb2220 0x400d2f87:0x[37m3[37mffb2250 0x[37m400d7d9e:0x3[37mf[37mfb2290
-21:40:01.918 > 
-21:40:01.918 >   #0  0x401433ca:0x3ffb0b80 in __ssvfscanf_r at /builds/idf/crosstool-NG/.build/xtensa-esp32-elf/src/newlib/newlib/libc/stdio/vfscanf.c:1531
-21:40:01.918 >   #1  0x4013d0b5:0x3ffb0f10 in sscanf at /builds/idf/crosstool-NG/.build/xtensa-esp32-elf/src/newlib/newlib/libc/stdio/sscanf.c:439
-21:40:01.918 >   #2  0x400d3579:0x3ffb0fd0 in service_response_t::nextChunk() at src/ServiceRequest.cpp:18
-21:40:01.918 >   #3  0x400d29b3:0x3ffb1020 in _ZZ19get_request_chunkedibENKUl18service_response_tE_clES_$isra$9 at test/test_ServiceEndpoint/main.cpp:79
-21:40:01.918 >   #4  0x400d2b3e:0x3ffb2050 in std::_Function_handler<void (service_response_t), get_request_chunked(int, bool)::{lambda(service_response_t)#1}>::_M_invoke(std::_Any_data const&, service_response_t&&) at /home/swagner/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/bits/std_function.h:297
-21:40:01.918 >   #5  0x400d39ef:0x3ffb20b0 in std::function<void (service_response_t)>::operator()(service_response_t) const at /home/swagner/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/bits/std_function.h:687
-21:40:01.918 >   #6  0x400d3a67:0x3ffb20d0 in ServiceRequest::handleResponseContent() at src/ServiceRequest.cpp:127
-21:40:01.918 >   #7  0x400d3b06:0x3ffb2130 in ServiceRequest::innerYield() at src/ServiceRequest.cpp:227
-21:40:01.918 >       (inlined by) ServiceRequest::innerYield() at src/ServiceRequest.cpp:207
-21:40:01.918 >   #8  0x400d3be5:0x3ffb2150 in ServiceRequest::yield() at src/ServiceRequest.cpp:195
-21:40:01.918 >   #9  0x400d3c76:0x3ffb2180 in ServiceRequest::await() at src/ServiceRequest.cpp:306
-21:40:01.918 >   #10 0x400d2e52:0x3ffb21a0 in get_request_chunked(int, bool) at test/test_ServiceEndpoint/main.cpp:103
-21:40:01.918 >   #11 0x400d2eac:0x3ffb2200 in test_chunked_transferencoding() at test/test_ServiceEndpoint/main.cpp:197
-21:40:01.918 >   #12 0x400d69ed:0x3ffb2220 in UnityDefaultTestRun at .pio/libdeps/nodemcu/Unity/src/unity.c:1835
-21:40:01.918 >   #13 0x400d2f87:0x3ffb2250 in setup() at test/test_ServiceEndpoint/main.cpp:234
-21:40:01.918 >   #14 0x400d7d9e:0x3ffb2290 in loopTask(void*) at /home/swagner/.platformio/packages/framework-arduinoespressif32/cores/esp32/main.cpp:42
-21:40:01.918 > 
-21:40:01.918 > [37m
-21:40:01.918 > 
-21:40:01.918 > 
-21:40:01.918 > ELF file SHA256: a1ec3b15d9ad8ff4
-21:40:01.918 > 
-21:40:01.990 > [37mR[37me[37mboot[37mi[37mng...
-21:40:01.992 > [37me[37mts Jun  8[37m [37m2016 00:22[37m:[37m57
-21:40:01.994 > 
-21:40:01.994 > rst:0[37mx[37mc (SW_CPU_R[37mE[37mSET),boot:[37m0[37mx13 (SPI_F[37mA[37mST_FLASH_BO[37mO[37mT)
-21:40:01.999 > configs[37mi[37mp: 0, SPIW[37mP[37m:0xee
-21:40:02.002 > clk_[37mdrv:0x00,q_[37md[37mrv:0x00,d_d[37mr[37mv:0x00,cs0[37m_[37mdrv:0x00,hd[37m_[37mdrv:0x00,w[37mp[37m_drv:0x00
-21:40:02.011 > [37mm[37mode:DIO, clock div:2
-21:40:02.012 > load:0x3fff0030,len:118[37m4[37m
-21:40:02.014 > load:0x40078000,len:[37m1[37m3232
-21:40:02.014 > load[37m:[37m0x40080400,[37ml[37men:3028
-21:40:02.016 > e[37mn[37mtry 0x40080[37m5[37me4
-21:40:09.364 > [37mr[37me[37mquest faile[37md[37m with code 0: failed t[37mo[37m connect t[37mo[37m server
-21:40:09.369 > r[37me[37mquest fail[37me[37md with code[37m [37m0: failed [37mt[37mo connect t[37mo[37m server
-21:40:09.376 > [37mtest/test_Se[37mrviceEndpoi[37mn[37mt/main.cpp:[37m1[37m04:test_ch[37mu[37mnked_transf[37me[37mrencoding:[37mF[37mAIL: Expect[37me[37md TRUE Was[37m [37mFALSE[37m[37m
-21:40:12.388 > [37mr[37me[37mquest failed with co[37md[37me 0: failed[37m [37mto connect[37m [37mto server[37m
-21:40:12.395 > [37mrequest fa[37mi[37mled with co[37md[37me 0: faile[37md[37m to connect[37m [37mto server[37m[37m
-21:40:12.400 > test/test_[37mS[37merviceEndp[37mo[37mint/main.cp[37mp[37m:67:test_s[37my[37mnc_explicit[37m_[37mawait_call[37ms[37m_with_close[37m:FAIL: Expe[37mc[37mted TRUE Wa[37ms[37m FALSE[37m[37m
-21:40:15.413 > [37mr[37me[37mquest fail[37me[37md with cod[37me[37m 0: failed [37mt[37mo connect [37mt[37mo server
-21:40:18.416 > [37mr[37me[37mquest faile[37md[37m with code [37m0[37m: failed t[37mo[37m connect to[37m [37mserver
-21:40:21.419 > [37mr[37meq[37mu[37mest failed[37m [37mwith code 0[37m:[37m failed to[37m [37mconnect to [37ms[37merver
-21:40:24.422 > [37mr[37mequ[37me[37mst failed [37mw[37mith code 0:[37m failed to [37mc[37monnect to s[37me[37mrver
-21:40:27.425 > [37mr[37mequ[37me[37mst failed with code 0: [37mf[37mailed to c[37mo[37mnnect to se[37mrver
-21:40:30.429 > [37mr[37meq[37mu[37mest failed[37m [37mwith code 0: failed to[37m connect to [37mserver
-21:40:33.432 > [37mr[37me[37mques[37mt[37m failed with code 0: f[37ma[37miled to con[37mnect to ser[37mv[37mer
-21:40:36.435 > [37mr[37mequest [37mfailed with[37m code 0: fai[37mled to conn[37mect to serve[37mr[37m
-21:40:39.438 > [37mr[37me[37mquest [37mf[37mailed with [37mc[37mode 0: failed to conne[37mc[37mt to serve[37mr[37m
-21:40:42.441 > [37mr[37me[37mquest fa[37mi[37mled with c[37mo[37mde 0: faile[37md[37m to connec[37mt[37m to server[37m[37m
-21:40:45.444 > [37mr[37me[37mquest fai[37ml[37med with co[37md[37me 0: failed[37m [37mto connect [37mt[37mo server[37m
-21:40:45.450 > [37mtest/test_S[37me[37mrviceEndpo[37mi[37mnt/main.cpp[37m:[37m236:test_s[37my[37mnc_implicit_await_calls_with_close[37m:[37mPASS
-21:40:48.460 > [37mr[37me[37mquest fail[37me[37md with cod[37me[37m 0: failed [37mt[37mo connect [37mt[37mo server
-21:40:48.466 > [37mr[37mequest fai[37ml[37med with cod[37me[37m 0: failed[37m [37mto connect [37mt[37mo server[37m
-21:40:48.471 > [37mtest/test_[37mS[37merviceEndpo[37mi[37mnt/main.cp[37mp[37m:67:test_sy[37mn[37mc_explicit_[37ma[37mwait_calls[37m_[37mwith_keepal[37mi[37mve:FAIL: E[37mx[37mpected TRUE[37m [37mWas FALSE[37m[37m
-21:40:51.485 > [37mr[37me[37mquest fail[37me[37md with code[37m [37m0: failed [37mt[37mo connect t[37mo[37m server
-21:40:51.491 > [37mr[37mequest fail[37me[37md with cod[37me[37m 0: failed [37mt[37mo connect to server
-21:40:51.496 > [37mt[37mest/test_Se[37mr[37mviceEndpoi[37mn[37mt/main.cpp[37m:[37m67:test_syn[37mc[37m_implicit_[37ma[37mwait_calls_[37mw[37mith_keepal[37mi[37mve:FAIL: Ex[37mp[37mected TRUE Was FALSE[37m[37m
-21:40:54.510 > [37mr[37me[37mquest faile[37md with code [37m0[37m: failed t[37mo[37m connect to[37m [37mserver
-21:40:54.515 > t[37me[37mst/test_Ser[37mv[37miceEndpoin[37mt[37m/main.cpp:6[37m7[37m:test_para[37ml[37mlel_explici[37mt[37m_await_cal[37ml[37ms:FAIL: Expected TRUE W[37ma[37ms FALSE[37m[37m
-21:40:54.528 > [37mr[37me[37mquest[37m [37mwith timeou[37mt[37m expected[37m
-21:40:57.512 > [37mr[37me[37mquest[37m [37mfailed wit[37mh[37m code 0: fa[37miled to con[37mn[37mect to serv[37mer
-21:41:00.515 > [37mr[37me[37mquest [37mf[37mailed with code 0: fai[37mled to conne[37mct to serve[37mr[37m
-21:41:03.518 > [37mr[37mequest f[37mailed with [37mc[37mode 0: failed to connect to server[37m[37m
-21:41:06.521 > [37mr[37me[37mquest fa[37mi[37mled with co[37mde 0: faile[37md[37m to connect[37m [37mto server[37m[37m
-21:41:09.524 > [37mr[37me[37mquest fail[37me[37md with code 0: failed to connect to server
-21:41:12.527 > [37mr[37me[37mquest fail[37me[37md with cod[37me[37m 0: failed [37mt[37mo connect [37mt[37mo server
-21:41:15.530 > [37mr[37me[37mquest failed[37m [37mwith code 0[37m: failed to[37m [37mconnect to[37m [37mserver
-21:41:18.533 > [37mr[37meq[37mu[37mest failed[37m [37mwith code 0[37m: failed to[37m [37mconnect to [37ms[37merver
-21:41:21.536 > [37mr[37meq[37mu[37mest failed [37mw[37mith code 0[37m:[37m failed to [37mc[37monnect to [37ms[37merver
-21:41:24.539 > [37mr[37mequ[37me[37mst failed w[37mi[37mth code 0:[37m [37mfailed to c[37mo[37mnnect to s[37me[37mrver
-21:41:27.542 > [37mr[37meques[37mt failed wi[37mt[37mh code 0: f[37ma[37miled to co[37mnnect to ser[37mver
-21:41:30.545 > [37mr[37meque[37ms[37mt failed wi[37mth code 0: [37mf[37mailed to connect to se[37mr[37mver
-21:41:33.548 > [37mr[37me[37mquest [37mfailed with[37m [37mcode 0: failed to conn[37me[37mct to server
-21:41:36.550 > [37mr[37me[37mquest f[37ma[37miled with code 0: fail[37me[37md to conne[37mc[37mt to server[37m
-21:41:39.554 > [37mr[37me[37mquest failed with code 0: failed to connect[37m [37mto server
-21:41:42.557 > [37mr[37me[37mquest fai[37mled with co[37md[37me 0: failed[37m [37mto connect [37mt[37mo server[37m
-21:41:45.559 > [37mr[37mequest fail[37me[37md with cod[37me[37m 0: failed [37mt[37mo connect [37mt[37mo server
-21:41:48.562 > [37mr[37me[37mquest fail[37me[37md with code 0: failed t[37mo[37m connect t[37mo[37m server
-21:41:51.565 > [37mr[37mequest faile[37md[37m with code 0: failed to[37m [37mconnect to server
-21:41:54.568 > [37mr[37mequ[37me[37mst failed with code 0:[37m [37mfailed to [37mconnect to s[37me[37mrver
-21:41:57.572 > [37mr[37meq[37mu[37mest failed[37m [37mwith code 0[37m:[37m failed to [37mc[37monnect to [37ms[37merver
-21:42:00.575 > [37mr[37meque[37mst failed with code 0: [37mf[37mailed to co[37mn[37mnect to se[37mr[37mver
-21:42:03.578 > [37mr[37me[37mques[37mt[37m failed wit[37mh code 0: f[37ma[37miled to connect to ser[37mv[37mer
-21:42:06.581 > [37mr[37me[37mquest [37mf[37mailed with[37m [37mcode 0: fai[37ml[37med to conn[37me[37mct to serve[37mr[37m
-21:42:09.586 > [37mr[37mequest failed with [37mc[37mode 0: failed to connect to server[37m[37m
-21:42:12.589 > [37mr[37mequest f[37mailed with c[37mo[37mde 0: faile[37md[37m to connect to server[37m[37m
-21:42:15.592 > [37mr[37me[37mquest fai[37ml[37med with cod[37me[37m 0: failed[37m [37mto connect [37mt[37mo server[37m
-21:42:18.595 > [37mr[37mequest fa[37mi[37mled with c[37mode 0: faile[37md[37m to connec[37mt[37m to server[37m[37m
-21:42:21.598 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:42:24.601 > [37mr[37meq[37mu[37mest failed[37m with code 0[37m:[37m failed to[37m [37mconnect to [37ms[37merver
-21:42:27.604 > [37mr[37meq[37muest failed with code 0: failed to connect to server
-21:42:30.607 > [37mr[37mequ[37me[37mst failed w[37mi[37mth code 0: failed to c[37monnect to s[37me[37mrver
-21:42:33.610 > [37mr[37mequ[37mest failed with code 0: failed to connect to server
-21:42:36.613 > [37mr[37me[37mques[37mt[37m failed wit[37mh[37m code 0: f[37ma[37miled to con[37mn[37mect to ser[37mv[37mer
-21:42:39.616 > [37mr[37me[37mquest[37m [37mfailed wit[37mh code 0: fa[37mi[37mled to con[37mn[37mect to serv[37me[37mr
-21:42:42.619 > [37mr[37me[37mquest [37mf[37mailed with [37mc[37mode 0: failed to conne[37mc[37mt to serve[37mr[37m
-21:42:45.622 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:42:48.624 > [37mr[37me[37mquest fai[37ml[37med with code 0: failed to connect [37mto server
-21:42:51.627 > [37mr[37me[37mquest fai[37ml[37med with cod[37me 0: failed[37m [37mto connect to server[37m
-21:42:54.630 > [37mr[37mequest failed with code 0: failed t[37mo connect t[37mo[37m server
-21:42:57.633 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:43:00.636 > [37mr[37mequest failed [37mwith code 0[37m:[37m failed to [37mc[37monnect to [37ms[37merver
-21:43:03.639 > [37mr[37mequ[37me[37mst failed [37mw[37mith code 0:[37m [37mfailed to [37mc[37monnect to server
-21:43:06.642 > [37mr[37mequest failed with code 0: [37mfailed to connect to se[37mrver
-21:43:09.645 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:43:12.648 > [37mr[37mequest[37m [37mfailed wit[37mh code 0: fa[37mi[37mled to con[37mnect to serv[37me[37mr
-21:43:15.651 > [37mr[37me[37mquest f[37mailed with [37mc[37mode 0: fail[37me[37md to conne[37mc[37mt to server[37m[37m
-21:43:18.654 > [37mr[37me[37mquest f[37ma[37miled with [37mcode 0: fail[37me[37md to connec[37mt[37m to server[37m[37m
-21:43:21.657 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:43:24.660 > [37mr[37me[37mquest failed with co[37md[37me 0: failed to connect[37m [37mto server
-21:43:27.663 > [37mr[37me[37mquest fail[37med with cod[37me[37m 0: failed to connect [37mt[37mo server
-21:43:30.666 > [37mr[37me[37mquest failed[37m with code [37m0: failed to[37m [37mconnect to[37m [37mserver
-21:43:33.669 > [37mr[37me[37mquest failed[37m [37mwith code 0[37m:[37m failed to[37m [37mconnect to [37ms[37merver
-21:43:36.672 > [37mr[37mequ[37mest failed [37mw[37mith code 0:[37m [37mfailed to [37mconnect to server
-21:43:39.675 > [37mr[37meque[37ms[37mt failed w[37mi[37mth code 0: [37mf[37mailed to c[37mo[37mnnect to s[37me[37mrver
-21:43:42.678 > [37mr[37me[37mquest[37m [37mfailed wit[37mh code 0: f[37mailed to con[37mnect to ser[37mver
-21:43:45.680 > [37mr[37mequest[37m [37mfailed wit[37mh code 0: fa[37miled to con[37mnect to ser[37mv[37mer
-21:43:48.684 > [37mr[37me[37mquest [37mf[37mailed with[37m [37mcode 0: fai[37ml[37med to conn[37me[37mct to serve[37mr[37m
-21:43:51.686 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:43:54.689 > [37mr[37me[37mquest fa[37mi[37mled with c[37mo[37mde 0: faile[37md[37m to connec[37mt[37m to server[37m[37m
-21:43:57.692 > [37mr[37me[37mquest failed with co[37md[37me 0: failed[37m [37mto connect[37m [37mto server
-21:44:00.695 > [37mr[37me[37mquest fail[37me[37md with cod[37me[37m 0: failed to connect t[37mo[37m server
-21:44:03.698 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:44:06.701 > [37mr[37me[37mquest failed with code [37m0[37m: failed to[37m [37mconnect to[37m [37mserver
-21:44:09.704 > [37mr[37meq[37mu[37mest failed [37mw[37mith code 0[37m:[37m failed to [37mc[37monnect to server
-21:44:12.707 > [37mr[37me[37mque[37ms[37mt failed w[37mi[37mth code 0: [37mf[37mailed to c[37mo[37mnnect to se[37mr[37mver
-21:44:15.710 > [37mr[37me[37mquest failed with code 0: failed to connect to server
-21:44:18.713 > [37mr[37me[37mques[37mt[37m failed wit[37mh[37m code 0: failed to con[37mn[37mect to ser[37mv[37mer
-21:44:21.716 > [37mr[37mequest [37mf[37mailed with [37mc[37mode 0: fai[37ml[37med to conne[37mc[37mt to serve[37mr[37m
-21:44:24.719 > [37mr[37me[37mquest [37mf[37mailed with [37mc[37mode 0: fai[37ml[37med to conne[37mc[37mt to serve[37mr[37m
-21:44:27.723 > [37mr[37mequest failed with co[37mde 0: faile[37md[37m to connect to server[37m
-21:44:30.726 > [37mr[37me[37mquest failed with cod[37me 0: failed to connect [37mt[37mo server
-21:44:33.729 > [37mr[37me[37mquest fai[37mled with cod[37me[37m 0: failed[37m [37mto connect [37mt[37mo server
-21:44:36.732 > [37mr[37me[37mquest faile[37md[37m with code[37m 0: failed t[37mo[37m connect to server
-21:44:39.734 > [37mr[37meq[37mu[37mest failed [37mw[37mith code 0[37m:[37m failed to [37mc[37monnect to [37ms[37merver
-21:44:42.738 > [37mr[37meq[37mu[37mest failed [37mw[37mith code 0[37m:[37m failed to [37mc[37monnect to [37ms[37merver
-21:44:45.740 > [37mr[37mequest failed with code 0: failed to co[37mn[37mnect to se[37mr[37mver
-21:44:48.744 > [37mr[37meque[37ms[37mt failed wi[37mt[37mh code 0: [37mf[37mailed to co[37mn[37mnect to se[37mr[37mver
-21:44:51.746 > [37mr[37me[37mquest[37m [37mfailed with[37m [37mcode 0: fa[37mi[37mled to conn[37mect to serv[37me[37mr
-21:44:54.749 > [37mr[37me[37mquest [37mf[37mailed with code 0: failed to conne[37mct to serve[37mr
-21:44:57.752 > [37mr[37mequest failed with code 0: failed to connect to server
-21:45:00.337 > [37mr[37me[37mquest s[37mu[37mcceeded
-21:45:00.910 > [37mr[37me[37mquest timed out
-21:45:02.036 > [37mr[37me[37mquest succ[37me[37meded
-21:45:02.119 > [37mr[37meque[37ms[37mt succeede[37md[37m
-21:45:02.183 > [37mr[37me[37mquest succ[37me[37meded
-21:45:02.267 > [37mr[37mequest succeeded[37m[37m
-21:45:02.320 > [37mr[37mequest succ[37meeded
-21:45:02.375 > [37mr[37mequest succeeded[37m
-21:45:02.440 > [37mr[37mequest succeeded[37m[37m
-21:45:02.504 > [37mr[37mequest succeeded
-21:45:02.560 > [37mr[37mequest[37m [37msucceeded[37m[37m
-21:45:02.625 > [37mr[37mequest succeeded
-21:45:02.679 > [37mr[37me[37mquest succeeded
-21:45:02.743 > [37mr[37meque[37ms[37mt succeede[37md[37m
-21:45:02.807 > [37mr[37me[37mquest suc[37mc[37meeded
-21:45:02.871 > [37mr[37mequest succe[37meded
-21:45:02.935 > [37mr[37mequest succ[37me[37meded
-21:45:02.991 > [37mr[37me[37mquest s[37mucceeded
-21:45:03.055 > [37mr[37meque[37ms[37mt succeeded
-21:45:03.138 > [37mr[37meque[37ms[37mt succeeded[37m[37m
-21:45:03.192 > [37mr[37meques[37mt[37m succeeded[37m[37m
-21:45:03.276 > [37mr[37me[37mquest s[37mu[37mcceeded
-21:45:03.340 > [37mr[37mequest su[37mc[37mceeded
-21:45:03.403 > [37mr[37mequest succeede[37md[37m
-21:45:03.496 > [37mr[37mequ[37me[37mst succeede[37md[37m
-21:45:03.549 > [37mr[37me[37mquest succeeded
-21:45:03.614 > [37mr[37me[37mquest succee[37md[37med
-21:45:03.678 > [37mr[37me[37mque[37ms[37mt succeede[37md[37m
-21:45:03.731 > [37mr[37mequest suc[37mc[37meeded
-21:45:03.805 > [37mr[37me[37mquest succeeded
-21:45:03.880 > [37mr[37me[37mquest succ[37me[37meded
-21:45:03.954 > [37mr[37mequest succe[37me[37mded
-21:45:04.018 > [37mr[37me[37mquest succe[37me[37mded
-21:45:04.074 > [37mr[37mequ[37me[37mst succeeded
-21:45:04.158 > [37mr[37me[37mquest succ[37meeded
-21:45:04.233 > [37mr[37me[37mquest succee[37md[37med
-21:45:04.298 > [37mr[37meq[37mu[37mest succeeded
-21:45:04.362 > [37mr[37meq[37mu[37mest succeed[37me[37md
-21:45:04.436 > [37mr[37me[37mquest suc[37mc[37meeded
-21:45:04.500 > [37mr[37me[37mquest succe[37me[37mded
-21:45:04.554 > [37mr[37me[37mquest s[37mu[37mcceeded
-21:45:04.620 > [37mr[37me[37mquest succe[37me[37mded
-21:45:04.734 > [37mr[37me[37mquest succe[37me[37mded
-21:45:04.798 > [37mr[37meque[37ms[37mt succeeded[37m[37m
-21:45:04.864 > [37mr[37me[37mquest succe[37me[37mded
-21:45:04.928 > [37mr[37me[37mquest [37ms[37mucceeded
-21:45:05.032 > [37mr[37meque[37ms[37mt succeeded[37m[37m
-21:45:05.115 > [37mr[37mequest succ[37me[37meded
-21:45:05.250 > [37mr[37me[37mquest s[37mu[37mcceeded
-21:45:05.315 > [37mr[37mequest succee[37mded
-21:45:05.409 > [37mr[37meques[37mt[37m succeeded[37m
-21:45:05.473 > [37mr[37me[37mquest[37m [37msucceeded[37m
-21:45:05.577 > [37mr[37me[37mquest[37m succeeded[37m[37m
-21:45:05.652 > [37mr[37me[37mque[37ms[37mt succeede[37md[37m
-21:45:05.726 > [37mr[37me[37mquest succe[37me[37mded
-21:45:05.809 > [37mr[37me[37mques[37mt[37m succeeded[37m
-21:45:05.983 > [37mr[37me[37mquest s[37mu[37mcceeded
-21:45:06.067 > [37mr[37me[37mquest succee[37md[37med
-21:45:06.413 > [37mr[37meques[37mt[37m succeeded[37m[37m
-21:45:06.508 > [37mr[37mequest succee[37mded
-21:45:06.592 > [37mr[37meq[37mu[37mest succee[37md[37med
-21:45:06.716 > [37mr[37me[37mquest succee[37md[37med
-21:45:06.819 > [37mr[37meques[37mt[37m succeeded[37m[37m
-21:45:06.893 > [37mr[37me[37mquest succee[37md[37med
-21:45:07.179 > [37mr[37me[37mques[37mt[37m succeeded[37m[37m
-21:45:07.284 > [37mr[37mequ[37me[37mst succeede[37md[37m
-21:45:07.368 > [37mr[37meq[37mu[37mest succeed[37me[37md
-21:45:07.962 > [37mr[37mequest[37m [37msucceeded
-21:45:08.025 > [37mr[37mequ[37me[37mst succeed[37me[37md
-21:45:08.249 > [37mr[37me[37mquest[37m [37msucceeded[37m[37m
-21:45:08.313 > [37mr[37me[37mquest[37m [37msucceeded[37m
-21:45:08.407 > [37mr[37me[37mquest succeeded
-21:45:08.461 > [37mr[37me[37mquest succee[37md[37med
-21:45:08.515 > [37mr[37meq[37mu[37mest succeed[37med
-21:45:08.580 > [37mr[37meques[37mt[37m succeeded[37m[37m

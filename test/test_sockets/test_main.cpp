@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <unity.h>
 #include <WiFi.h>
+#include <BufferlessWiFiClient.h>
 #include <env.h>
 
 void setUp(void)
@@ -15,11 +16,11 @@ void tearDown(void)
 
 uint8_t i = 0;
 const uint8_t max_blinks = CONFIG_LWIP_MAX_SOCKETS;
-WiFiClient* clients[max_blinks];
+BufferlessWiFiClient* clients[max_blinks];
 
 void test_client_connect() {
     // arrange
-    auto c = new WiFiClient();
+    auto c = new BufferlessWiFiClient();
     int result = 0;
 
     // act

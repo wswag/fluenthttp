@@ -7,7 +7,8 @@
 
 #ifdef WIFI_CLIENT
 #include <WiFi.h>
-WiFiClient client;
+#include <BufferlessWiFiClient.h>
+BufferlessWiFiClient client;
 #else
 #include <Ethernet.h>
 #include <EthernetClient.h>
@@ -72,6 +73,7 @@ void get_request(int timeout, bool sync) {
       })
       .fire();
     if (sync) {
+      printf("await GET request...\r\n");
       auto t2 = millis();
       request.await();
       auto t3 = millis();
@@ -101,12 +103,15 @@ void setup()
 
   #ifdef WIFI_CLIENT
   WiFi.mode(WIFI_STA);
+  printf("connecting to wlan ssid %s\r\n", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWD);
   while (!WiFi.isConnected()) {
     digitalWrite(LED_BUILTIN, (digitalRead(LED_BUILTIN) + 1) % 2);
     delay(300);
   }
-  client.setTimeout(10);
+  printf("connected to wlan ssid %s\r\n", WIFI_SSID);
+  digitalWrite(LED_BUILTIN, 1);
+  client.setTimeout(1000);
   #else
   log_d("initializing ethernet on cs pin %d", ETHERNET_SPI_CS_PIN);
   Ethernet.init(ETHERNET_SPI_CS_PIN);

@@ -98,7 +98,7 @@ void ServiceEndpoint::close() {
 
 void ServiceEndpoint::assertNonce(int nonce) {
     if (_lastRequest._nonce != nonce) {
-        while (lockNext(100) == -1)
+        while (lockNext(1000) == -1)
         {
         }
     }

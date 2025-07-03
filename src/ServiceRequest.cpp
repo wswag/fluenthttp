@@ -26,11 +26,14 @@ void ServiceRequest::beginRequest(long nonce) {
 
 void ServiceRequest::fail(const char* message)
 {
+    bool wasntIdle = _status != srsIdle;
     _status = srsPrefailed;
     _response = service_response_t();
     _response.statusMessage = message;
-    // trigger failed handler immediately
-    fire();
+    if (wasntIdle) {
+        // trigger failed handler immediately
+        fire();
+    }
 }
 
 void ServiceRequest::call(const char* method, const char* relativeUri) 
@@ -205,9 +208,10 @@ bool ServiceRequest::yield() {
         case srsIdle:
         case srsArmed:
         case srsIncomplete:
+            return false;
         case srsCompleted:
         case srsFailed:
-            return;
+            return true;
     }
 
     if (xSemaphoreTake(_endpoint->_yieldHandle, 0)) {
@@ -220,7 +224,10 @@ bool ServiceRequest::yield() {
             cancel(e.what());
         }
         xSemaphoreGive(_endpoint->_yieldHandle);
-        return finished();
+        if (finished()) {
+            // unlock automatically
+            _endpoint->unlock(_nonce);
+        }
     }
     return false;
 }
@@ -273,8 +280,8 @@ ServiceRequest& ServiceRequest::fire() {
                 _failCallback(_response);
         }
         catch (std::exception e) {
-            finalize(srsFailed);
         }
+        finalize(srsFailed);
     }
     else if (_status == srsIncomplete) {
         _client->println();

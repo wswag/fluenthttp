@@ -15,7 +15,8 @@ WiFiClient client;
 EthernetClient client;
 #endif
 
-#define ENDPOINT_IP IPAddress(192,168,178,41)
+//#define ENDPOINT_IP IPAddress(192,168,178,41)
+#define ENDPOINT_IP IPAddress(192,168,178,38)
 
 ServiceEndpoint endpoint(ENDPOINT_IP);
 
@@ -48,7 +49,7 @@ void print_content(service_response_t r) {
 void get_request(int timeout, bool sync) {
   printf("connect to server...\r\n");
   auto t0 = millis();
-  ServiceRequest& request = endpoint.get("/status");
+  ServiceRequest& request = endpoint.get("/rpc/PM1.GetStatus?id=0");
   auto t1 = millis();
   bool success = false;
   bool* successPtr = &success;
@@ -82,9 +83,8 @@ void get_request(int timeout, bool sync) {
 void test_sync_explicit_await_calls_with_close() {
   endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
-        delay(3000);
         get_request(10000, true);
-        //endpoint.close();
+        endpoint.close();
     }
 }
 
@@ -130,7 +130,7 @@ void loop()
 {
   static int i = 0;
   RUN_TEST(test_sync_explicit_await_calls_with_close);
-  if (i >= 3)
+  if (i >= 30)
     UNITY_END(); // stop unit testing
   i++;
 }

@@ -29,6 +29,8 @@ void ServiceRequest::fail(const char* message)
     _status = srsPrefailed;
     _response = service_response_t();
     _response.statusMessage = message;
+    // trigger failed handler immediately
+    fire();
 }
 
 void ServiceRequest::call(const char* method, const char* relativeUri) 
@@ -198,6 +200,16 @@ ServiceRequest& ServiceRequest::withTimeout(uint32_t timeout) {
 }
 
 bool ServiceRequest::yield() {
+    // block parallel yield calls
+    switch (_status) {
+        case srsIdle:
+        case srsArmed:
+        case srsIncomplete:
+        case srsCompleted:
+        case srsFailed:
+            return;
+    }
+
     if (xSemaphoreTake(_endpoint->_yieldHandle, 0)) {
         try {
             innerYield();
@@ -208,21 +220,13 @@ bool ServiceRequest::yield() {
             cancel(e.what());
         }
         xSemaphoreGive(_endpoint->_yieldHandle);
+        return finished();
     }
-    return finished();
+    return false;
 }
 
-void ServiceRequest::innerYield() {
-    // block parallel yield calls
-    switch (_status) {
-        case srsIdle:
-        case srsArmed:
-        case srsIncomplete:
-        case srsCompleted:
-        case srsFailed:
-            return;
-    }
-    
+void ServiceRequest::innerYield()
+{
     size_t btr = 0;
     while ((btr = _client->available()) != 0 || 
             // trigger callback when contentlength was not specified or 0
@@ -264,11 +268,15 @@ ServiceRequest& ServiceRequest::addHeader(const char* key, const char* value) {
 ServiceRequest& ServiceRequest::fire() {
     if (_status == srsPrefailed) {
         // call failed callback directly
-        if (_failCallback != 0)
-            _failCallback(_response);
-        finalize(srsFailed);
+        try {
+            if (_failCallback != 0)
+                _failCallback(_response);
+        }
+        catch (std::exception e) {
+            finalize(srsFailed);
+        }
     }
-    if (_status == srsIncomplete) {
+    else if (_status == srsIncomplete) {
         _client->println();
          //Serial.printf("[%X]> ", (uint8_t)((size_t)this));
          //Serial.println();
@@ -297,14 +305,12 @@ ServiceRequest& ServiceRequest::fireContent(String data) {
 }
 
 void ServiceRequest::cancel(const char* message) {
-    if (xSemaphoreTake(_endpoint->_yieldHandle, 1000)) {
+    try {
         if (finished()) return;
         // something failed on user code
         fail(message);
-        // trigger failed handler immediately
-        fire();
-        xSemaphoreGive(_endpoint->_yieldHandle);
     }
+    catch (std::exception e) {}
 }
 
 void ServiceRequest::await() {

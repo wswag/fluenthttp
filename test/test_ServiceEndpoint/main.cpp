@@ -42,11 +42,11 @@ void print_content(service_response_t r) {
   printf("\r\n");
 }
 
-void get_request(int timeout, bool sync) {
+ServiceRequest* get_request(int timeout, bool sync, int nonce = -1) {
   static int n = 0;
   n++;
-  printf("get request %d\r\n", n);
-  ServiceRequest& request = endpoint.get("/publickey/");
+  printf("get request %d, (nonce %d)\r\n", n, nonce);
+  ServiceRequest& request = endpoint.get("/publickey/", nonce);
   bool success = false;
   bool* successPtr = &success;
   request.withTimeout(timeout)
@@ -65,13 +65,16 @@ void get_request(int timeout, bool sync) {
         // leads to stack overflow..
          // TEST_FAIL_MESSAGE("request timed out");
       });
-    printf("fire request %d\r\n", n);
-    request.fire();
-    if (sync) {
-      printf("await request %d\r\n", n);
-      request.await();
-      TEST_ASSERT_TRUE(success);
-    }
+
+  printf("fire request %d\r\n", n);
+  request.fire();
+  if (sync) {
+    printf("await request %d\r\n", n);
+    request.await();
+    TEST_ASSERT_TRUE(success);
+    return nullptr;
+  }
+  return &request;
 }
 
 void get_request_chunked(int timeout, bool sync) {
@@ -111,16 +114,18 @@ void get_request_chunked(int timeout, bool sync) {
     }
 }
 
+static int count = 10;
+
 void test_sync_implicit_await_calls_with_keepalive() {
     endpoint.withKeepAlive(false);
-    for (int k = 0; k <= 10; k++) {
+    for (int k = 0; k < count; k++) {
         get_request(TIMEOUT, true);
     }
 }
 
 void test_sync_implicit_await_calls_with_close() {
     endpoint.withKeepAlive(false);
-    for (int k = 0; k <= 10; k++) {
+    for (int k = 0; k < count; k++) {
         get_request(TIMEOUT, false);
         //endpoint.close();
     }
@@ -128,20 +133,20 @@ void test_sync_implicit_await_calls_with_close() {
 
 void test_sync_explicit_await_calls_with_keepalive() {
     endpoint.withKeepAlive(true);
-    for (int k = 0; k <= 10; k++) {
+    for (int k = 0; k < count; k++) {
         get_request(TIMEOUT, true);
     }
 }
 
 void test_sync_explicit_await_calls_with_close() {
   endpoint.withKeepAlive(false);
-    for (int k = 0; k <= 10; k++) {
+    for (int k = 0; k < count; k++) {
         get_request(TIMEOUT, true);
         //endpoint.close();
     }
 }
 
-bool doParallel = false;
+volatile bool doParallel = false;
 
 void yield_task(void* arg) {
   while (true)
@@ -155,16 +160,35 @@ void yield_task(void* arg) {
 }
 
 void parallel_task(void* arg) {
+  ServiceRequest* req = nullptr;
   while (true)
   {
-    if (doParallel)
-      test_sync_implicit_await_calls_with_close();
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    if (doParallel) {
+      //test_sync_implicit_await_calls_with_close();
+      if (req == nullptr) {
+        int nonce = endpoint.lockNext(0);
+        if (nonce != -1) {
+          printf("task %d received nonce %d\r\n", (int)arg, nonce);
+          req = get_request(500, false, nonce);
+        }
+      }
+      else {
+        if (req->yield()) {
+          req = nullptr;
+        }
+      }
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+    else {
+      vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
   }
 }
 
 void test_parallel_explicit_await_calls() {
+  endpoint.withKeepAlive(false);
   doParallel = true;
+  delay(60000);
   test_sync_explicit_await_calls_with_close();
   doParallel = false;
 }
@@ -232,18 +256,22 @@ void setup()
   endpoint.begin(&client);
 
   TaskHandle_t handle1, handle2, handle3, yieldHandle;
-  xTaskCreate(parallel_task, "t1", 12000, nullptr, 5, &handle1);
-  xTaskCreate(parallel_task, "t2", 12000, nullptr, 5, &handle2);
-  xTaskCreate(parallel_task, "t3", 12000, nullptr, 5, &handle3);
-  xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
+  xTaskCreate(parallel_task, "t1", 12000, (void*)1, 5, &handle1);
+  xTaskCreate(parallel_task, "t2", 12000, (void*)2, 5, &handle2);
+  xTaskCreate(parallel_task, "t3", 12000, (void*)3, 5, &handle3);
+  //xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
 
+  RUN_TEST(test_parallel_explicit_await_calls);
   RUN_TEST(test_chunked_transferencoding);
   RUN_TEST(test_sync_explicit_await_calls_with_close);
-  RUN_TEST(test_sync_implicit_await_calls_with_close);
   RUN_TEST(test_sync_explicit_await_calls_with_keepalive);
-  RUN_TEST(test_sync_implicit_await_calls_with_keepalive);
-  RUN_TEST(test_parallel_explicit_await_calls);
   RUN_TEST(test_timeout_continue);
+
+  // tests with yield in a different thread
+  xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
+  RUN_TEST(test_sync_implicit_await_calls_with_keepalive);
+  RUN_TEST(test_sync_implicit_await_calls_with_close);
+  
 
 //  UNITY_END();
 }

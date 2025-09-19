@@ -15,15 +15,9 @@ int ServiceEndpoint::connectClient() {
     return result;
 }
 
-ServiceRequest& ServiceEndpoint::getActiveRequest() {
-    return _lastRequest;
-}
-
 void ServiceEndpoint::createSemaphores() {
     _waitHandle = xSemaphoreCreateBinary();
-    _yieldHandle = xSemaphoreCreateBinary();
     xSemaphoreGive(_waitHandle);
-    xSemaphoreGive(_yieldHandle);
 }
 
 ServiceEndpoint::ServiceEndpoint(const char* hostname) 
@@ -55,80 +49,43 @@ void ServiceEndpoint::begin(Client* client) {
     _client = client;
 }
 
-bool ServiceEndpoint::isReady() {
-    auto s = _lastRequest.getStatus();
-    return (s == srsIdle || _lastRequest.finished() && _client != nullptr);
-}
-
-int ServiceEndpoint::lockNext(int msToWait) {
-    const TickType_t xTicksToWait = (msToWait) / portTICK_PERIOD_MS;
-    if (xSemaphoreTake(_waitHandle, xTicksToWait) == pdTRUE)
-    {
-        _lastRequest = ServiceRequest(nullptr, this);
-        _lastRequest.beginRequest(_nonce);
-        return _nonce;
-    }
-    return -1;
-}
-
-bool ServiceEndpoint::unlock(int nonce) {
-    if (nonce == _nonce) {
-        if (!isReady()) {
-            _lastRequest.cancel("unlock cancel");
-        }
-        _nonce++;
-        xSemaphoreGive(_waitHandle);
-        return true;
-    }
-    return false;
+bool ServiceEndpoint::unlock() {
+    xSemaphoreGive(_waitHandle);
+    return true;
 }
 
 void ServiceEndpoint::forceUnlock() {
-    unlock(_nonce);
+    close();
+    unlock();
 }
 
 void ServiceEndpoint::close() {
-    if (!isReady()) {
-        _lastRequest.cancel("force close");
-    }
-    else {
-        _client->stop();
-    }
+    _client->stop();
 }
 
-void ServiceEndpoint::assertNonce(int nonce) {
-    if (_lastRequest._nonce != nonce) {
-        while (lockNext(100) == -1)
-        {
-        }
-    }
-}
+bool ServiceEndpoint::beginRequest(const char* relativeUri, const char* httpMethod, ServiceRequest& request, int lockTimeout) {
+    // acquire the semaphore first
+    if (xSemaphoreTake(_waitHandle, lockTimeout) == pdFALSE)
+        return false;
 
-ServiceRequest& ServiceEndpoint::get(const char* relativeUri, int nonce) {
-    assertNonce(nonce);
+    request = ServiceRequest(_client, this);
     if (!connectClient()) {
-        _lastRequest.fail("failed to connect to server");
-        return _lastRequest;
+        request.fail("failed to connect to server");
+        return true;
     }
-    _lastRequest._client = _client;
-    _lastRequest.call("GET", relativeUri);
-    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
-    _lastRequest.addHeader("Accept", "*/*");
-    _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
-    _lastRequest.withKeepAlive(_keepAlive);
-    return _lastRequest;
+    request.beginRequest();
+    request.call(httpMethod, relativeUri);
+    request.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
+    request.addHeader("Accept", "*/*");
+    request.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
+    request.withKeepAlive(_keepAlive);
+    return true;
 }
 
-ServiceRequest& ServiceEndpoint::post(const char* relativeUri, int nonce) {
-    assertNonce(nonce);
-    if (!connectClient()) {
-        _lastRequest.fail("failed to connect to server");
-        return _lastRequest;
-    }
-    _lastRequest._client = _client;
-    _lastRequest.call("POST", relativeUri);
-    _lastRequest.addHeader("Host", _hasHostname ? _hostname.c_str() : _ipaddr.toString().c_str());
-    _lastRequest.addHeader("Accept", "*/*");
-    _lastRequest.addHeader("Connection", _keepAlive ? "keep-alive" : "close");
-    return _lastRequest;
+bool ServiceEndpoint::get(const char* relativeUri, ServiceRequest& request, int lockTimeout) {
+    return beginRequest(relativeUri, "GET", request, lockTimeout);
+}
+
+bool ServiceEndpoint::post(const char* relativeUri, ServiceRequest& request, int lockTimeout) {
+    return beginRequest(relativeUri, "POST", request, lockTimeout);
 }

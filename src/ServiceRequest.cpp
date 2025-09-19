@@ -1,5 +1,9 @@
 #include "fluenthttp.h"
 
+// TODO: ServiceRequest nicht mehr als Referenz liefern, die vom Service überprüft wird,
+// sondern als Copy-Objekt und im Objekt die Semaphore im Service steuern
+// Problem: Dangling References
+
 int service_response_t::nextChunk() {
     if (this->contentReader->available() == 0) return 0;
     if (!this->chunked) {
@@ -19,16 +23,20 @@ int service_response_t::nextChunk() {
     }
 }
 
-void ServiceRequest::beginRequest(long nonce) {
+void ServiceRequest::beginRequest() {
     _status = srsArmed;
-    _nonce = nonce;
 }
 
 void ServiceRequest::fail(const char* message)
 {
+    bool wasntUninitialized = _status != srsUninitialized;
     _status = srsPrefailed;
     _response = service_response_t();
     _response.statusMessage = message;
+    if (wasntUninitialized) {
+        // trigger failed handler immediately
+        fire();
+    }
 }
 
 void ServiceRequest::call(const char* method, const char* relativeUri) 
@@ -57,7 +65,6 @@ void ServiceRequest::finalize(service_request_status_t status)
     if (!_keepAlive && _client != nullptr) {
         _client->stop();
     }
-    _endpoint->forceUnlock();
 }
 
 void ServiceRequest::handleResponseBegin() 
@@ -198,31 +205,36 @@ ServiceRequest& ServiceRequest::withTimeout(uint32_t timeout) {
 }
 
 bool ServiceRequest::yield() {
-    if (xSemaphoreTake(_endpoint->_yieldHandle, 0)) {
-        try {
-            innerYield();
-        }
-        catch (std::exception e)
-        {
-            // something failed on user code
-            cancel(e.what());
-        }
-        xSemaphoreGive(_endpoint->_yieldHandle);
-    }
-    return finished();
-}
-
-void ServiceRequest::innerYield() {
     // block parallel yield calls
     switch (_status) {
-        case srsIdle:
+        case srsUninitialized:
         case srsArmed:
         case srsIncomplete:
+            return false;
         case srsCompleted:
         case srsFailed:
-            return;
+            return true;
+    }
+
+    try {
+        innerYield();
+    }
+    catch (std::exception e)
+    {
+        // something failed on user code
+        cancel(e.what());
     }
     
+    if (finished()) {
+        // unlock the service
+        _endpoint->unlock();
+        return true;
+    }
+    return false;
+}
+
+void ServiceRequest::innerYield()
+{
     size_t btr = 0;
     while ((btr = _client->available()) != 0 || 
             // trigger callback when contentlength was not specified or 0
@@ -264,11 +276,15 @@ ServiceRequest& ServiceRequest::addHeader(const char* key, const char* value) {
 ServiceRequest& ServiceRequest::fire() {
     if (_status == srsPrefailed) {
         // call failed callback directly
-        if (_failCallback != 0)
-            _failCallback(_response);
+        try {
+            if (_failCallback != 0)
+                _failCallback(_response);
+        }
+        catch (std::exception e) {
+        }
         finalize(srsFailed);
     }
-    if (_status == srsIncomplete) {
+    else if (_status == srsIncomplete) {
         _client->println();
          //Serial.printf("[%X]> ", (uint8_t)((size_t)this));
          //Serial.println();
@@ -297,22 +313,20 @@ ServiceRequest& ServiceRequest::fireContent(String data) {
 }
 
 void ServiceRequest::cancel(const char* message) {
-    if (xSemaphoreTake(_endpoint->_yieldHandle, 1000)) {
+    try {
         if (finished()) return;
         // something failed on user code
         fail(message);
-        // trigger failed handler immediately
-        fire();
-        xSemaphoreGive(_endpoint->_yieldHandle);
     }
+    catch (std::exception e) {}
 }
 
 void ServiceRequest::await() {
     switch (_status) {
-        case srsIdle:
+        case srsUninitialized:
         case srsArmed:
-            return;
         case srsIncomplete:
+            return;
         case srsPrefailed:
             fire();
         default: break;
@@ -320,7 +334,7 @@ void ServiceRequest::await() {
     
     while (!yield())
     {
-        vTaskDelay(10 / portTICK_RATE_MS);
+        delay(10); // will call vTaskDelay on FreeRTOS platforms to allow other tasks to run
     }
 }
 

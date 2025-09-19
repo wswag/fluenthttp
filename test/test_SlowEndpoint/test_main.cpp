@@ -7,7 +7,8 @@
 
 #ifdef WIFI_CLIENT
 #include <WiFi.h>
-WiFiClient client;
+#include <BufferlessWiFiClient.h>
+BufferlessWiFiClient client;
 #else
 #include <Ethernet.h>
 #include <EthernetClient.h>
@@ -15,7 +16,8 @@ WiFiClient client;
 EthernetClient client;
 #endif
 
-#define ENDPOINT_IP IPAddress(192,168,178,41)
+//#define ENDPOINT_IP IPAddress(192,168,178,41)
+#define ENDPOINT_IP IPAddress(192,168,178,38)
 
 ServiceEndpoint endpoint(ENDPOINT_IP);
 
@@ -48,7 +50,7 @@ void print_content(service_response_t r) {
 void get_request(int timeout, bool sync) {
   printf("connect to server...\r\n");
   auto t0 = millis();
-  ServiceRequest& request = endpoint.get("/status");
+  ServiceRequest& request = endpoint.get("/rpc/PM1.GetStatus?id=0");
   auto t1 = millis();
   bool success = false;
   bool* successPtr = &success;
@@ -71,6 +73,7 @@ void get_request(int timeout, bool sync) {
       })
       .fire();
     if (sync) {
+      printf("await GET request...\r\n");
       auto t2 = millis();
       request.await();
       auto t3 = millis();
@@ -82,9 +85,8 @@ void get_request(int timeout, bool sync) {
 void test_sync_explicit_await_calls_with_close() {
   endpoint.withKeepAlive(false);
     for (int k = 0; k <= 10; k++) {
-        delay(3000);
         get_request(10000, true);
-        //endpoint.close();
+        endpoint.close();
     }
 }
 
@@ -101,12 +103,15 @@ void setup()
 
   #ifdef WIFI_CLIENT
   WiFi.mode(WIFI_STA);
+  printf("connecting to wlan ssid %s\r\n", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWD);
   while (!WiFi.isConnected()) {
     digitalWrite(LED_BUILTIN, (digitalRead(LED_BUILTIN) + 1) % 2);
     delay(300);
   }
-  client.setTimeout(10);
+  printf("connected to wlan ssid %s\r\n", WIFI_SSID);
+  digitalWrite(LED_BUILTIN, 1);
+  client.setTimeout(1000);
   #else
   log_d("initializing ethernet on cs pin %d", ETHERNET_SPI_CS_PIN);
   Ethernet.init(ETHERNET_SPI_CS_PIN);
@@ -130,7 +135,7 @@ void loop()
 {
   static int i = 0;
   RUN_TEST(test_sync_explicit_await_calls_with_close);
-  if (i >= 3)
+  if (i >= 30)
     UNITY_END(); // stop unit testing
   i++;
 }

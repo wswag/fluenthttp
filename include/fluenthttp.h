@@ -22,14 +22,14 @@ struct service_response_t {
 };
 
 enum service_request_status_t {
-    srsIdle = 0,
+    srsUninitialized = 0,
     srsArmed = 1,
     srsIncomplete = 2,
     srsAwaitResponse = 3,
     srsReadingHeader = 4,
     srsReadingContent = 5,
     srsCompleted = 6,
-    srsPrefailed = 8,
+    srsPrefailed = 7,
     srsFailed = 8
 };
 
@@ -49,16 +49,15 @@ class ServiceRequest {
         long _t0 = 0;
         int _timeout = 1000;
         Client* _client;
-        service_request_status_t _status = srsIdle;
+        service_request_status_t _status = srsUninitialized;
         service_response_t _response = service_response_t();
         bool _keepAlive = false;
-        long _nonce = 0;
 
         void handleResponseBegin();
         void handleResponseHeader();
         void handleResponseContent();
 
-        void beginRequest(long nonce);
+        void beginRequest();
         void call(const char* method, const char* relativeUri);
         void innerYield();
 
@@ -101,18 +100,13 @@ class ServiceEndpoint {
         IPAddress _ipaddr;
         uint16_t _port;
         bool _hasHostname = false;
-        ServiceRequest _lastRequest;
-        bool _armed = false;
         bool _keepAlive = false;
 
         SemaphoreHandle_t _waitHandle;
-        SemaphoreHandle_t _yieldHandle;
-
-        uint16_t _nonce = 1;
 
         int connectClient();
-        void assertNonce(int nonce);
         void createSemaphores();
+        bool unlock();
     public:
         ServiceEndpoint(const char* hostname);
         ServiceEndpoint(const char* hostname, uint16_t port);
@@ -125,18 +119,14 @@ class ServiceEndpoint {
         void begin(Client* client);
         void close();
 
-        bool isReady();
-        int lockNext(int msToWait);
         void forceUnlock();
-        bool unlock(int nonce);
         
-        ServiceRequest& get(const char* relativeUri, int nonce = -1);
-        ServiceRequest& post(const char* relativeUri, int nonce = -1);
+        bool beginRequest(const char* relativeUri, const char* httpMethod, ServiceRequest& request, int lockTimeout = 0);
+        bool get(const char* relativeUri, ServiceRequest& request, int lockTimeout = 0);
+        bool post(const char* relativeUri, ServiceRequest& request, int lockTimeout = 0);
 
         IPAddress getIPAdress() { return _ipaddr; }
         const char* getHostname() { return _hostname.c_str(); }
-
-        ServiceRequest& getActiveRequest();
 };
 
 

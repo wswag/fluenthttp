@@ -5,7 +5,8 @@
 
 #ifdef WIFI_CLIENT
 #include <WiFi.h>
-WiFiClient client;
+#include <BufferlessWiFiClient.h>
+BufferlessWiFiClient client;
 #else
 #include <Ethernet.h>
 #include <EthernetClient.h>
@@ -14,6 +15,7 @@ EthernetClient client;
 
 
 ServiceEndpoint endpoint(TEST_ENDPOINT);
+ServiceRequest* _currentRequest = nullptr;
 
 const int TIMEOUT = 500;
 
@@ -41,124 +43,174 @@ void print_content(service_response_t r) {
   printf("\r\n");
 }
 
-void get_request(int timeout, bool sync) {
-  ServiceRequest& request = endpoint.get("/publickey/");
-  bool success = false;
-  bool* successPtr = &success;
-  request.withTimeout(timeout)
-      .onSuccess([=](service_response_t r) {
-          *successPtr = true;
-          printf("request succeeded\r\n");
-          //print_content(r);
-      })
-      .onFailure([=](service_response_t r) {
-        printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
-        // leads to stack overflow..
-          //TEST_FAIL_MESSAGE("request failed");
-      })
-      .onTimeout([=] {
-        printf("request timed out\r\n");
-        // leads to stack overflow..
-         // TEST_FAIL_MESSAGE("request timed out");
-      })
-      .fire();
+ServiceRequest* get_request(int timeout, bool sync) {
+  static int n = 0;
+  ServiceRequest* request = new ServiceRequest();
+  if (endpoint.get("/publickey/", *request)) {
+    n++;
+    printf("get request %d\r\n", n);
+    bool success = false;
+    bool* successPtr = &success;
+    request->withTimeout(timeout)
+        .onSuccess([=](service_response_t r) {
+            *successPtr = true;
+            printf("request %d succeeded at %d, content length %d\r\n", n, millis(), r.contentLength);
+            //print_content(r);
+        })
+        .onFailure([=](service_response_t r) {
+          printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
+          // leads to stack overflow..
+            //TEST_FAIL_MESSAGE("request failed");
+        })
+        .onTimeout([=] {
+          printf("request timed out\r\n");
+          // leads to stack overflow..
+          // TEST_FAIL_MESSAGE("request timed out");
+        });
+
+    printf("fire request %d\r\n", n);
+    request->fire();
     if (sync) {
-      request.await();
+      printf("await request %d\r\n", n);
+      request->await();
       TEST_ASSERT_TRUE(success);
+      delete request;
+      return nullptr;
     }
+    return request;
+  }
+  delete request;
+  return nullptr;
 }
 
 void get_request_chunked(int timeout, bool sync) {
-  ServiceRequest& request = endpoint.get("/firmware/Tester/image/chunk?start=0&len=4096");
-  bool success = false;
-  bool* successPtr = &success;
-  request.withTimeout(timeout)
-      .onSuccess([=](service_response_t r) {
-          *successPtr = true;
-          int chunk = r.nextChunk();
-          byte buffer[4096];
-          int n = 1;
-          while (chunk != 0) {
-            printf("chunk %d: %d bytes\r\n", n, chunk);
-            r.contentReader->readBytes(buffer, chunk);
-            log_print_buf(buffer, chunk);
-            n++;
-            chunk = r.nextChunk();
-          }
-          printf("request succeeded\r\n");
-          //print_content(r);
-      })
-      .onFailure([=](service_response_t r) {
-        printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
-        // leads to stack overflow..
-          //TEST_FAIL_MESSAGE("request failed");
-      })
-      .onTimeout([=] {
-        printf("request timed out\r\n");
-        // leads to stack overflow..
-         // TEST_FAIL_MESSAGE("request timed out");
-      })
-      .fire();
-    if (sync) {
-      request.await();
-      TEST_ASSERT_TRUE(success);
-    }
+  ServiceRequest request;
+  if (endpoint.get("/firmware/Tester/image/chunk?start=0&len=4096", request)) {
+    bool success = false;
+    bool* successPtr = &success;
+    request.withTimeout(timeout)
+        .onSuccess([=](service_response_t r) {
+            *successPtr = true;
+            int chunk = r.nextChunk();
+            byte buffer[4096];
+            int n = 1;
+            while (chunk != 0) {
+              printf("chunk %d: %d bytes\r\n", n, chunk);
+              r.contentReader->readBytes(buffer, chunk);
+              log_print_buf(buffer, chunk);
+              n++;
+              chunk = r.nextChunk();
+            }
+            printf("request succeeded\r\n");
+            //print_content(r);
+        })
+        .onFailure([=](service_response_t r) {
+          printf("request failed with code %d: %s\r\n", r.statusCode, r.statusMessage.c_str());
+          // leads to stack overflow..
+            //TEST_FAIL_MESSAGE("request failed");
+        })
+        .onTimeout([=] {
+          printf("request timed out\r\n");
+          // leads to stack overflow..
+          // TEST_FAIL_MESSAGE("request timed out");
+        })
+        .fire();
+        request.await();
+        TEST_ASSERT_TRUE(success);
+  }
 }
 
+static int count = 10;
+
 void test_sync_implicit_await_calls_with_keepalive() {
-    endpoint.withKeepAlive(false);
-    for (int k = 0; k <= 10; k++) {
-        get_request(TIMEOUT, true);
+    endpoint.withKeepAlive(true);
+    for (int k = 0; k < count; k++) {
+        ServiceRequest* rq = nullptr;
+        do {
+          rq = get_request(TIMEOUT, false);
+          if (rq == nullptr)
+            delay(10);
+          else
+            printf("gotcha\r\n");
+        } while (rq == nullptr);
+        _currentRequest = rq;
     }
 }
 
 void test_sync_implicit_await_calls_with_close() {
     endpoint.withKeepAlive(false);
-    for (int k = 0; k <= 10; k++) {
-        get_request(TIMEOUT, false);
-        //endpoint.close();
+    for (int k = 0; k < count; k++) {
+      ServiceRequest* rq = nullptr;
+      do {
+        rq = get_request(TIMEOUT, false);
+        if (rq == nullptr)
+          delay(10);
+      } while (rq == nullptr);
+      _currentRequest = rq;
+      //endpoint.close();
     }
 }
 
 void test_sync_explicit_await_calls_with_keepalive() {
     endpoint.withKeepAlive(true);
-    for (int k = 0; k <= 10; k++) {
+    for (int k = 0; k < count; k++) {
         get_request(TIMEOUT, true);
     }
 }
 
 void test_sync_explicit_await_calls_with_close() {
   endpoint.withKeepAlive(false);
-    for (int k = 0; k <= 10; k++) {
+    for (int k = 0; k < count; k++) {
         get_request(TIMEOUT, true);
         //endpoint.close();
     }
 }
 
-bool doParallel = false;
+volatile bool doParallel = false;
 
 void yield_task(void* arg) {
   while (true)
   {
-    ServiceRequest& r = endpoint.getActiveRequest();
-    if (r.getStatus() != srsIdle) {
-      r.yield();
+    auto r = _currentRequest;
+    if (r != nullptr) {
+      if (r->getStatus() != srsUninitialized && !r->finished()) {
+        r->yield();
+      }
     }
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
 void parallel_task(void* arg) {
+  ServiceRequest* req = nullptr;
   while (true)
   {
-    if (doParallel)
-      test_sync_implicit_await_calls_with_close();
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    if (doParallel) {
+      //test_sync_implicit_await_calls_with_close();
+      if (req == nullptr) {
+          req = get_request(500, false);
+          if (req != nullptr) {
+            printf("gotcha task %d\r\n", (int)arg);
+          }
+      }
+      else {
+        if (req->yield()) {
+          delete req;
+          req = nullptr;
+        }
+      }
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+    else {
+      vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
   }
 }
 
 void test_parallel_explicit_await_calls() {
+  endpoint.withKeepAlive(false);
   doParallel = true;
+  delay(60000);
   test_sync_explicit_await_calls_with_close();
   doParallel = false;
 }
@@ -226,18 +278,22 @@ void setup()
   endpoint.begin(&client);
 
   TaskHandle_t handle1, handle2, handle3, yieldHandle;
-  xTaskCreate(parallel_task, "t1", 12000, nullptr, 5, &handle1);
-  xTaskCreate(parallel_task, "t2", 12000, nullptr, 5, &handle2);
-  xTaskCreate(parallel_task, "t3", 12000, nullptr, 5, &handle3);
-  xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
+  xTaskCreate(parallel_task, "t1", 12000, (void*)1, 5, &handle1);
+  xTaskCreate(parallel_task, "t2", 12000, (void*)2, 5, &handle2);
+  xTaskCreate(parallel_task, "t3", 12000, (void*)3, 5, &handle3);
+  //xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
 
+  RUN_TEST(test_parallel_explicit_await_calls);
   RUN_TEST(test_chunked_transferencoding);
   RUN_TEST(test_sync_explicit_await_calls_with_close);
-  RUN_TEST(test_sync_implicit_await_calls_with_close);
   RUN_TEST(test_sync_explicit_await_calls_with_keepalive);
-  RUN_TEST(test_sync_implicit_await_calls_with_keepalive);
-  RUN_TEST(test_parallel_explicit_await_calls);
   RUN_TEST(test_timeout_continue);
+
+  // tests with yield in a different thread
+  xTaskCreate(yield_task, "t2", 32000, nullptr, 5, &yieldHandle);
+  RUN_TEST(test_sync_implicit_await_calls_with_keepalive);
+  RUN_TEST(test_sync_implicit_await_calls_with_close);
+  
 
 //  UNITY_END();
 }

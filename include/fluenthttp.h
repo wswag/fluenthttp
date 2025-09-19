@@ -88,6 +88,7 @@ class ServiceRequest {
         void await();
         bool yield();
         bool finished() { return _status == srsCompleted || _status == srsFailed; }
+        bool active() { return !finished() && _status != srsUninitialized; }
 
         service_request_status_t getStatus();
 };

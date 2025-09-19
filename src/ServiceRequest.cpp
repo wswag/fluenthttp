@@ -1,5 +1,9 @@
 #include "fluenthttp.h"
 
+// TODO: ServiceRequest nicht mehr als Referenz liefern, die vom Service überprüft wird,
+// sondern als Copy-Objekt und im Objekt die Semaphore im Service steuern
+// Problem: Dangling References
+
 int service_response_t::nextChunk() {
     if (this->contentReader->available() == 0) return 0;
     if (!this->chunked) {
@@ -19,18 +23,17 @@ int service_response_t::nextChunk() {
     }
 }
 
-void ServiceRequest::beginRequest(long nonce) {
+void ServiceRequest::beginRequest() {
     _status = srsArmed;
-    _nonce = nonce;
 }
 
 void ServiceRequest::fail(const char* message)
 {
-    bool wasntIdle = _status != srsIdle;
+    bool wasntUninitialized = _status != srsUninitialized;
     _status = srsPrefailed;
     _response = service_response_t();
     _response.statusMessage = message;
-    if (wasntIdle) {
+    if (wasntUninitialized) {
         // trigger failed handler immediately
         fire();
     }
@@ -62,7 +65,6 @@ void ServiceRequest::finalize(service_request_status_t status)
     if (!_keepAlive && _client != nullptr) {
         _client->stop();
     }
-    _endpoint->forceUnlock();
 }
 
 void ServiceRequest::handleResponseBegin() 
@@ -205,7 +207,7 @@ ServiceRequest& ServiceRequest::withTimeout(uint32_t timeout) {
 bool ServiceRequest::yield() {
     // block parallel yield calls
     switch (_status) {
-        case srsIdle:
+        case srsUninitialized:
         case srsArmed:
         case srsIncomplete:
             return false;
@@ -214,20 +216,19 @@ bool ServiceRequest::yield() {
             return true;
     }
 
-    if (xSemaphoreTake(_endpoint->_yieldHandle, 0)) {
-        try {
-            innerYield();
-        }
-        catch (std::exception e)
-        {
-            // something failed on user code
-            cancel(e.what());
-        }
-        xSemaphoreGive(_endpoint->_yieldHandle);
-        if (finished()) {
-            // unlock automatically
-            _endpoint->unlock(_nonce);
-        }
+    try {
+        innerYield();
+    }
+    catch (std::exception e)
+    {
+        // something failed on user code
+        cancel(e.what());
+    }
+    
+    if (finished()) {
+        // unlock the service
+        _endpoint->unlock();
+        return true;
     }
     return false;
 }
@@ -322,10 +323,10 @@ void ServiceRequest::cancel(const char* message) {
 
 void ServiceRequest::await() {
     switch (_status) {
-        case srsIdle:
+        case srsUninitialized:
         case srsArmed:
-            return;
         case srsIncomplete:
+            return;
         case srsPrefailed:
             fire();
         default: break;
@@ -333,7 +334,7 @@ void ServiceRequest::await() {
     
     while (!yield())
     {
-        vTaskDelay(10 / portTICK_RATE_MS);
+        delay(10); // will call vTaskDelay on FreeRTOS platforms to allow other tasks to run
     }
 }
 

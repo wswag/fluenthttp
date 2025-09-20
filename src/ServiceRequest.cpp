@@ -61,9 +61,13 @@ void ServiceRequest::call(const char* method, const char* relativeUri)
 void ServiceRequest::finalize(service_request_status_t status)
 {
     //log_w("[%X]!> finalize vs %X", ((size_t)this), _client);
-    _status = status;
-    if (!_keepAlive && _client != nullptr) {
-        _client->stop();
+    if (!finished()) {
+        _status = status;
+        if (!_keepAlive && _client != nullptr) {
+            _client->stop();
+        }
+        // unlock the endpoint
+        _endpoint->unlock();
     }
 }
 
@@ -226,8 +230,6 @@ bool ServiceRequest::yield() {
     }
     
     if (finished()) {
-        // unlock the service
-        _endpoint->unlock();
         return true;
     }
     return false;
